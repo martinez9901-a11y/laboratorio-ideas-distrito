@@ -3,7 +3,7 @@
 //  - modo "opinion": analiza una idea del tablero y deja su opinión como comentario guardado
 // Requiere GEMINI_API_KEY (Google AI Studio, nivel gratuito) en las variables de entorno de Netlify.
 import { getStore } from "@netlify/blobs";
-import { EMPRESA, VOZ, json, streamTexto, geminiStream, iaActiva } from "../lib/distrito.mjs";
+import { EMPRESA, VOZ, json, streamTexto, geminiStream, iaActiva, diagnostico } from "../lib/distrito.mjs";
 
 const ID = /^[a-z0-9-]{1,80}$/i;
 const CAT = { ventas: "Ventas", redes: "Redes sociales", visibilidad: "Visibilidad", mejora: "Ser mejores" };
@@ -18,7 +18,17 @@ async function resumenTablero(store) {
 }
 
 export default async (req) => {
-  if (req.method === "GET") return json({ activa: iaActiva() });
+  if (req.method === "GET") {
+    // /api/asistente?diagnostico=1 → qué modelos se usan y si Google responde
+    if (new URL(req.url).searchParams.has("diagnostico") && iaActiva()) {
+      try {
+        return json({ activa: true, ...(await diagnostico()) });
+      } catch (err) {
+        return json({ activa: true, error: err.message });
+      }
+    }
+    return json({ activa: iaActiva() });
+  }
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
   if (!iaActiva())
     return json({ error: "La IA aún no está activada. Pide que agreguen GEMINI_API_KEY en la configuración de Netlify." }, 503);

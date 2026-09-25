@@ -20,35 +20,81 @@ export const json = (data, status = 200) =>
 // ---------------------------------------------------------------------------
 // Gemini
 // ---------------------------------------------------------------------------
-// Modelo principal y respaldos (todos con nivel gratuito). Si uno llega a su límite
-// de uso gratuito o no está disponible, se intenta con el siguiente.
-// Se puede cambiar el principal con la variable GEMINI_MODEL en Netlify.
-const MODELOS = [process.env.GEMINI_MODEL, "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"].filter(
-  (m, i, a) => m && a.indexOf(m) === i,
-);
+// El sitio le pregunta a Google qué modelos puede usar esta clave y elige los mejores "flash"
+// (rápidos y con nivel gratuito). Así no dependemos de nombres de modelo que cambian con el tiempo.
+// Para forzar uno en particular, agrega la variable GEMINI_MODEL en Netlify (ej. gemini-2.5-flash).
 const API = "https://generativelanguage.googleapis.com/v1beta/models";
+const RESPALDO = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const headers = () => ({ "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY });
 
 export const iaActiva = () => Boolean(process.env.GEMINI_API_KEY);
 
 const errorPublico = (msg) => Object.assign(new Error(msg), { publico: msg });
 
+// Mensaje corto de error de Google (sin datos sensibles) para mostrarlo en el sitio.
+async function detalleError(res) {
+  const txt = await res.text().catch(() => "");
+  let msg = txt;
+  try {
+    msg = JSON.parse(txt).error?.message || txt;
+  } catch {}
+  return `${res.status} ${String(msg).slice(0, 180)}`;
+}
+
+let modelosCache = null;
+export async function modelosDisponibles() {
+  if (modelosCache) return modelosCache;
+  const fijo = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : [];
+  try {
+    const res = await fetch(`${API}?pageSize=1000`, { headers: headers() });
+    if (!res.ok) throw new Error(await detalleError(res));
+    const { models = [] } = await res.json();
+    const nombres = models
+      .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+      .map((m) => m.name.replace(/^models\//, ""));
+    const version = (n) => parseFloat((/gemini-(\d+(?:\.\d+)?)/.exec(n) || [])[1] || 0);
+    // Preferimos modelos estables "gemini-X-flash", luego "flash-lite"; los más nuevos primero.
+    const estables = nombres
+      .filter((n) => /^gemini-\d+(\.\d+)?-flash(-lite)?$/.test(n))
+      .sort((a, b) => a.endsWith("-lite") - b.endsWith("-lite") || version(b) - version(a));
+    const otros = nombres.filter((n) => /flash/.test(n) && !/tts|live|image|audio|embed|robotics/.test(n) && !estables.includes(n));
+    const elegidos = [...fijo, ...estables.slice(0, 3), ...otros.slice(0, 1)];
+    modelosCache = elegidos.length ? [...new Set(elegidos)] : [...fijo, ...RESPALDO];
+  } catch (err) {
+    console.error("No se pudo consultar la lista de modelos:", err.message);
+    return [...new Set([...fijo, ...RESPALDO])]; // sin caché: se reintenta en la próxima llamada
+  }
+  return modelosCache;
+}
+
 // Pide a Gemini; si falla por límite (429), modelo no disponible (404) o saturación (5xx), prueba el siguiente modelo.
 async function pedir(accion, cuerpo) {
-  let ultimo;
-  for (const modelo of MODELOS) {
-    const res = await fetch(`${API}/${modelo}:${accion}`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
-      body: JSON.stringify(cuerpo),
-    });
+  let ultimo = "";
+  let codigo = 0;
+  for (const modelo of await modelosDisponibles()) {
+    const res = await fetch(`${API}/${modelo}:${accion}`, { method: "POST", headers: headers(), body: JSON.stringify(cuerpo) });
     if (res.ok) return res;
-    ultimo = `${modelo}: ${res.status} ${await res.text().catch(() => "")}`;
-    console.error("Gemini respondió con error:", ultimo);
+    codigo = res.status;
+    ultimo = await detalleError(res);
+    console.error(`Gemini (${modelo}) respondió con error:`, ultimo);
     if (![404, 429, 500, 502, 503, 504].includes(res.status)) break;
   }
-  if (ultimo?.includes(": 429"))
-    throw errorPublico("La IA alcanzó su límite gratuito por ahora. Espera un minuto e intenta de nuevo.");
-  throw errorPublico("La IA no respondió en este momento. Intenta de nuevo en unos segundos.");
+  if (codigo === 429) throw errorPublico("La IA alcanzó su límite gratuito por ahora. Espera un minuto e intenta de nuevo.");
+  if (codigo === 400 || codigo === 401 || codigo === 403)
+    throw errorPublico(`Google rechazó la clave de la IA (${ultimo}). Revisa GEMINI_API_KEY en Netlify.`);
+  throw errorPublico(`La IA no respondió en este momento (${ultimo || "sin respuesta"}). Intenta de nuevo en unos segundos.`);
+}
+
+// Revisión rápida para diagnosticar la conexión (no expone la clave).
+export async function diagnostico() {
+  modelosCache = null;
+  const modelos = await modelosDisponibles();
+  const res = await fetch(`${API}/${modelos[0]}:generateContent`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Responde solo: ok" }] }] }),
+  });
+  return { modelos, prueba: res.ok ? "ok" : await detalleError(res) };
 }
 
 const textoDe = (data) =>
