@@ -1,0 +1,10 @@
+{
+  "name": "distrito-aduanal-ideas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "@netlify/blobs": "^8.1.0"
+  }
+}
