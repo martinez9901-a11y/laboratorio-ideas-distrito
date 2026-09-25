@@ -1,38 +1,15 @@
-// Asistente de IA para el equipo:
+// Asistente de IA (Gemini) para el equipo, todo dentro del sitio:
 //  - modo "chat":    lluvia de ideas conversacional (conoce las ideas del tablero)
 //  - modo "opinion": analiza una idea del tablero y deja su opinión como comentario guardado
-// Requiere ANTHROPIC_API_KEY en las variables de entorno de Netlify.
-import Anthropic from "@anthropic-ai/sdk";
+// Requiere GEMINI_API_KEY (Google AI Studio, nivel gratuito) en las variables de entorno de Netlify.
 import { getStore } from "@netlify/blobs";
-import { EMPRESA, VOZ, MODELO, json, streamTexto } from "../lib/distrito.mjs";
+import { EMPRESA, VOZ, json, streamTexto, geminiStream, iaActiva } from "../lib/distrito.mjs";
 
 const ID = /^[a-z0-9-]{1,80}$/i;
 const CAT = { ventas: "Ventas", redes: "Redes sociales", visibilidad: "Visibilidad", mejora: "Ser mejores" };
 
 const FORMATO = `Formato de respuesta: texto plano con **negritas**, listas con "- " o "1. " y párrafos cortos.
 Sin encabezados con #, sin tablas. Sé concreto y accionable; cuando propongas ideas incluye cómo medirlas (métricas con meta).`;
-
-// Pide la respuesta a Claude y la va enviando en vivo; devuelve el texto completo al terminar.
-async function responder(system, messages, maxTokens, escribir) {
-  const client = new Anthropic();
-  const stream = client.messages.stream({
-    model: MODELO,
-    max_tokens: maxTokens,
-    output_config: { effort: "medium" },
-    system,
-    messages,
-  });
-  let texto = "";
-  for await (const event of stream) {
-    if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-      texto += event.delta.text;
-      escribir(event.delta.text);
-    }
-  }
-  const final = await stream.finalMessage();
-  if (final.stop_reason === "refusal") throw Object.assign(new Error("refusal"), { publico: "La IA no pudo responder a esta solicitud." });
-  return texto.trim();
-}
 
 async function resumenTablero(store) {
   const { blobs } = await store.list({ prefix: "ideas/" });
@@ -41,10 +18,10 @@ async function resumenTablero(store) {
 }
 
 export default async (req) => {
-  if (req.method === "GET") return json({ activa: Boolean(process.env.ANTHROPIC_API_KEY) });
+  if (req.method === "GET") return json({ activa: iaActiva() });
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
-  if (!process.env.ANTHROPIC_API_KEY)
-    return json({ error: "El asistente de IA aún no está activado. Pide que agreguen ANTHROPIC_API_KEY en la configuración de Netlify." }, 503);
+  if (!iaActiva())
+    return json({ error: "La IA aún no está activada. Pide que agreguen GEMINI_API_KEY en la configuración de Netlify." }, 503);
 
   let body;
   try {
@@ -81,7 +58,7 @@ ${tablero || "(el tablero está vacío)"}
 ${FORMATO}`;
       const nombre = String(body.nombre ?? "").slice(0, 60);
       if (nombre) limpio[limpio.length - 1].content = `(${nombre} del equipo escribe:) ${limpio.at(-1).content}`;
-      return streamTexto((escribir) => responder(system, limpio, 4000, escribir));
+      return streamTexto((escribir) => geminiStream({ sistema: system, mensajes: limpio, escribir }));
     }
 
     if (body.modo === "opinion") {
@@ -93,9 +70,10 @@ ${FORMATO}`;
       const comentarios = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter((c) => c && !c.ia);
 
       return streamTexto(async (escribir) => {
-        const texto = await responder(
-          `${VOZ}\n\nEres el asistente de IA del equipo y das retroalimentación honesta y constructiva sobre sus ideas.\n\n${EMPRESA}\n\n${FORMATO}`,
-          [
+        const texto = await geminiStream({
+          sistema: `${VOZ}\n\nEres el asistente de IA del equipo y das retroalimentación honesta y constructiva sobre sus ideas.\n\n${EMPRESA}\n\n${FORMATO}`,
+          escribir,
+          mensajes: [
             {
               role: "user",
               content: `Analiza esta idea del tablero del equipo y da tu opinión en máximo 180 palabras con este orden:
@@ -109,9 +87,7 @@ ${idea.metricas?.length ? `Métricas propuestas: ${idea.metricas.join("; ")}` : 
 ${comentarios.length ? `Comentarios del equipo:\n${comentarios.slice(-10).map((c) => `- ${c.autor}: ${c.texto}`).join("\n")}` : ""}`,
             },
           ],
-          2000,
-          escribir,
-        );
+        });
 
         const c = {
           id: `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,

@@ -1,8 +1,7 @@
 // Generador de ideas (lluvia de ideas).
-// Por defecto es gratis: usa el banco de plantillas de ../lib/plantillas.mjs.
-// Solo si algún día se configura ANTHROPIC_API_KEY en Netlify (de pago), usa la IA de Claude.
-import Anthropic from "@anthropic-ai/sdk";
-import { EMPRESA, VOZ, MODELO, json, jsonConEspera } from "../lib/distrito.mjs";
+// Con GEMINI_API_KEY configurada en Netlify usa la IA de Gemini (nivel gratuito);
+// sin ella, o si la IA falla, usa el banco de plantillas de ../lib/plantillas.mjs.
+import { EMPRESA, VOZ, json, jsonConEspera, geminiJSON, iaActiva } from "../lib/distrito.mjs";
 import { generarSinIA } from "../lib/plantillas.mjs";
 
 const TIPO_TXT = {
@@ -12,44 +11,36 @@ const TIPO_TXT = {
   mejora: "acciones para ser mejores que la competencia (servicio, tiempos, experiencia del cliente, tecnología) y demostrarlo con métricas",
 };
 
-const SCHEMA = {
-  type: "object",
-  additionalProperties: false,
+// Esquema de respuesta en el formato de Gemini.
+const TEXTO = { type: "STRING" };
+const LISTA = { type: "ARRAY", items: { type: "STRING" } };
+const ESQUEMA = {
+  type: "OBJECT",
   required: ["ideas"],
   properties: {
     ideas: {
-      type: "array",
+      type: "ARRAY",
       items: {
-        type: "object",
-        additionalProperties: false,
+        type: "OBJECT",
         required: ["titulo", "descripcion", "pasos", "red", "diferenciador", "metricas"],
-        properties: {
-          titulo: { type: "string" },
-          descripcion: { type: "string" },
-          pasos: { type: "array", items: { type: "string" } },
-          red: { type: "string" },
-          diferenciador: { type: "string" },
-          metricas: { type: "array", items: { type: "string" } },
-        },
+        propertyOrdering: ["titulo", "red", "descripcion", "diferenciador", "pasos", "metricas"],
+        properties: { titulo: TEXTO, red: TEXTO, descripcion: TEXTO, diferenciador: TEXTO, pasos: LISTA, metricas: LISTA },
       },
     },
   },
 };
 
-async function conClaude({ tipo, red, tema, publico, cantidad }) {
-  const client = new Anthropic();
+async function conIA({ tipo, red, tema, publico, cantidad }) {
   const detalleRed =
     tipo === "redes"
       ? `Red social: ${red || "Facebook, Instagram y LinkedIn (reparte las ideas entre las tres)"}.
 Para cada idea: "descripcion" incluye el formato (carrusel, reel, post, artículo, video corto), el gancho inicial y un borrador del texto (copy) listo para publicar con hashtags. "pasos" = cómo producirla. "red" = la red social.`
       : `"pasos" = 3 a 5 primeros pasos concretos para ejecutarla. "red" = cadena vacía salvo que la idea sea para una red social específica.`;
 
-  const response = await client.messages.create({
-    model: MODELO,
-    max_tokens: 16000,
-    output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } },
-    system: `${VOZ}\n\n${EMPRESA}`,
-    messages: [
+  const { ideas } = await geminiJSON({
+    sistema: `${VOZ}\n\n${EMPRESA}`,
+    esquema: ESQUEMA,
+    mensajes: [
       {
         role: "user",
         content: `Genera ${cantidad} ${TIPO_TXT[tipo]} para Distrito Aduanal.
@@ -62,10 +53,8 @@ Que sean ideas variadas, originales y realistas; evita lo que ya hace cualquier 
       },
     ],
   });
-
-  if (response.stop_reason === "refusal") throw new Error("La solicitud fue rechazada");
-  const text = response.content.find((b) => b.type === "text")?.text ?? "";
-  return JSON.parse(text).ideas;
+  if (!Array.isArray(ideas) || !ideas.length) throw new Error("Respuesta vacía de la IA");
+  return ideas.slice(0, cantidad);
 }
 
 export default async (req) => {
@@ -84,12 +73,12 @@ export default async (req) => {
     cantidad: Math.min(Math.max(parseInt(body.cantidad) || 4, 1), 6),
   };
 
-  if (process.env.ANTHROPIC_API_KEY) {
+  if (iaActiva()) {
     return jsonConEspera(
-      conClaude(params)
+      conIA(params)
         .then((ideas) => ({ fuente: "ia", ideas }))
         .catch((err) => {
-          console.error("Error con Claude, uso plantillas:", err);
+          console.error("Error con Gemini, uso plantillas:", err);
           return { fuente: "plantillas", ideas: generarSinIA(params) };
         }),
     );
