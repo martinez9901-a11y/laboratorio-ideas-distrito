@@ -67,12 +67,34 @@ export async function modelosDisponibles() {
   return modelosCache;
 }
 
+// Velocidad: los modelos nuevos "piensan" antes de responder; para lluvia de ideas basta con poco.
+// Gemini 2.5 usa thinkingBudget (0 = sin pensar); Gemini 3 en adelante usa thinkingLevel.
+const pensamientoMinimo = (modelo) =>
+  /gemini-2\.5/.test(modelo) ? { thinkingBudget: modelo.includes("pro") ? 128 : 0 } : { thinkingLevel: "low" };
+
+const conPensamiento = (cuerpo, modelo) => ({
+  ...cuerpo,
+  generationConfig: { ...(cuerpo.generationConfig || {}), thinkingConfig: pensamientoMinimo(modelo) },
+});
+
 // Pide a Gemini; si falla por límite (429), modelo no disponible (404) o saturación (5xx), prueba el siguiente modelo.
 async function pedir(accion, cuerpo) {
   let ultimo = "";
   let codigo = 0;
   for (const modelo of await modelosDisponibles()) {
-    const res = await fetch(`${API}/${modelo}:${accion}`, { method: "POST", headers: headers(), body: JSON.stringify(cuerpo) });
+    const url = `${API}/${modelo}:${accion}`;
+    let res = await fetch(url, { method: "POST", headers: headers(), body: JSON.stringify(conPensamiento(cuerpo, modelo)) });
+    if (res.status === 400) {
+      // Si el modelo no acepta el ajuste de pensamiento, se reintenta sin él.
+      const detalle = await detalleError(res);
+      if (!/think/i.test(detalle)) {
+        codigo = 400;
+        ultimo = detalle;
+        console.error(`Gemini (${modelo}) respondió con error:`, ultimo);
+        break;
+      }
+      res = await fetch(url, { method: "POST", headers: headers(), body: JSON.stringify(cuerpo) });
+    }
     if (res.ok) return res;
     codigo = res.status;
     ultimo = await detalleError(res);
@@ -80,7 +102,7 @@ async function pedir(accion, cuerpo) {
     if (![404, 429, 500, 502, 503, 504].includes(res.status)) break;
   }
   if (codigo === 429) throw errorPublico("La IA alcanzó su límite gratuito por ahora. Espera un minuto e intenta de nuevo.");
-  if (codigo === 400 || codigo === 401 || codigo === 403)
+  if (codigo === 401 || codigo === 403)
     throw errorPublico(`Google rechazó la clave de la IA (${ultimo}). Revisa GEMINI_API_KEY en Netlify.`);
   throw errorPublico(`La IA no respondió en este momento (${ultimo || "sin respuesta"}). Intenta de nuevo en unos segundos.`);
 }
@@ -89,12 +111,10 @@ async function pedir(accion, cuerpo) {
 export async function diagnostico() {
   modelosCache = null;
   const modelos = await modelosDisponibles();
-  const res = await fetch(`${API}/${modelos[0]}:generateContent`, {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Responde solo: ok" }] }] }),
-  });
-  return { modelos, prueba: res.ok ? "ok" : await detalleError(res) };
+  const inicio = Date.now();
+  const res = await pedir("generateContent", { contents: [{ role: "user", parts: [{ text: "Responde solo: ok" }] }] }).catch((e) => e);
+  const ms = Date.now() - inicio;
+  return { modelos, prueba: res instanceof Error ? res.message : "ok", segundos: +(ms / 1000).toFixed(1) };
 }
 
 const textoDe = (data) =>

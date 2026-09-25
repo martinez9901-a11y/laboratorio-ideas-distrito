@@ -4,6 +4,8 @@ import { getStore } from "@netlify/blobs";
 
 const ID = /^[a-z0-9-]{1,80}$/i;
 const TIPOS = ["ventas", "redes", "visibilidad", "mejora"];
+// Seguimiento: nueva → en planeación → planeada → ejecutada
+const ESTADOS = ["nueva", "planeacion", "planeada", "ejecutada"];
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -45,11 +47,12 @@ export default async (req) => {
       await Promise.all(SEMILLAS.map((i) => store.setJSON(`ideas/${i.id}`, i)));
       await store.set("meta/sembrado", "1");
     }
-    const [ideaList, voteList, commentList, starList] = await Promise.all([
+    const [ideaList, voteList, commentList, starList, estadoList] = await Promise.all([
       store.list({ prefix: "ideas/" }),
       store.list({ prefix: "votes/" }),
       store.list({ prefix: "comments/" }),
       store.list({ prefix: "stars/" }),
+      store.list({ prefix: "estado/" }),
     ]);
 
     const ideas = (await Promise.all(ideaList.blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean);
@@ -79,7 +82,14 @@ export default async (req) => {
     const all = (await Promise.all(commentList.blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean);
     for (const c of all.sort((a, b) => a.fecha.localeCompare(b.fecha))) (comments[c.ideaId] ??= []).push(c);
 
-    return json({ ideas, votes, mine, stars, myStars, comments });
+    // estado/{ideaId} → { estado, responsable, fecha, resultado, por, actualizado }
+    const seguimiento = {};
+    const estados = await Promise.all(estadoList.blobs.map((b) => store.get(b.key, { type: "json" })));
+    estadoList.blobs.forEach((b, k) => {
+      if (estados[k]) seguimiento[b.key.slice("estado/".length)] = estados[k];
+    });
+
+    return json({ ideas, votes, mine, stars, myStars, comments, seguimiento });
   }
 
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
@@ -130,6 +140,20 @@ export default async (req) => {
     await Promise.all([1, 2, 3, 4, 5].map((k) => store.delete(`stars/${ideaId}/${k}/${voterId}`)));
     if (n > 0) await store.set(`stars/${ideaId}/${n}/${voterId}`, "1");
     return json({ ok: true });
+  }
+
+  if (body.action === "estado") {
+    if (!ID.test(body.ideaId || "") || !ESTADOS.includes(body.estado)) return json({ error: "Datos inválidos" }, 400);
+    const seg = {
+      estado: body.estado,
+      responsable: clean(body.responsable, 80),
+      fecha: /^\d{4}-\d{2}-\d{2}$/.test(body.fecha || "") ? body.fecha : "",
+      resultado: clean(body.resultado, 1000),
+      por: clean(body.autor, 60) || "Anónimo",
+      actualizado: new Date().toISOString(),
+    };
+    await store.setJSON(`estado/${body.ideaId}`, seg);
+    return json({ ok: true, seguimiento: seg });
   }
 
   if (body.action === "comentar") {

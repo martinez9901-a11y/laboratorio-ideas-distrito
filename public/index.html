@@ -214,6 +214,42 @@
   .link-btn:hover { color: var(--green-d); }
   .link-btn svg { width: 16px; height: 16px; }
 
+  /* ---------- Seguimiento ---------- */
+  .kanban { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
+  .col { background: #E9EDF1; border-radius: 14px; padding: 10px; min-height: 240px; transition: background .15s, box-shadow .15s; }
+  .col.drop { background: var(--green-l); box-shadow: inset 0 0 0 2px var(--green); }
+  .col-head { display: flex; align-items: center; gap: 8px; padding: 4px 6px 10px; font-weight: 700; font-size: 14px; }
+  .col-head i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .col-head span { margin-left: auto; background: #fff; border-radius: 99px; padding: 1px 9px; font-size: 12px; color: var(--muted); }
+  .col-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 20px 8px; border: 1.5px dashed #C9D2DB; border-radius: 10px; }
+  .kcard { background: #fff; border-radius: 10px; padding: 12px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(15,36,54,.08); border: 1px solid var(--line); cursor: grab; }
+  .kcard:hover { border-color: var(--green); }
+  .kcard.dragging { opacity: .5; }
+  .kcard .tag { font-size: 10px; padding: 3px 7px; }
+  .kcard h4 { margin: 8px 0 6px; font-size: 15px; line-height: 1.3; }
+  .kmeta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--muted); }
+  .kmeta .late { color: var(--red); font-weight: 600; }
+  .kres { font-size: 12px; background: var(--green-l); color: #1E6B2A; border-radius: 8px; padding: 6px 8px; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .kmove { display: flex; gap: 6px; margin-top: 10px; }
+  .kmove button { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 7px; font-size: 12px; font-weight: 600; padding: 5px 4px; cursor: pointer; color: var(--navy-3); }
+  .kmove button:hover { border-color: var(--green); color: var(--green-d); }
+  .estado-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 6px; background: var(--bg); color: var(--navy); border: 0; cursor: pointer; }
+  .estado-tag i { width: 8px; height: 8px; border-radius: 50%; }
+  .estado-tag:hover { box-shadow: inset 0 0 0 1px var(--line); }
+  .estados { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .estados button { border: 1px solid var(--line); background: #fff; border-radius: 9px; padding: 9px 4px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--muted); }
+  .estados button i { width: 10px; height: 10px; border-radius: 50%; }
+  .estados button.on { border-color: var(--navy); background: var(--navy); color: #fff; }
+  .seg-meta { font-size: 12px; color: var(--muted); margin: 12px 0 0; }
+  @media (min-width: 821px) and (max-width: 1040px) { .kanban { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .avance { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 16px; padding: 0; text-align: left; cursor: pointer; overflow: hidden; }
+  .avance:hover { border-color: var(--green); }
+  .avance div { padding: 14px 18px; border-right: 1px solid var(--line); position: relative; }
+  .avance div:last-child { border-right: 0; }
+  .avance div::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 3px; background: var(--c); }
+  .avance b { font-family: var(--serif); font-weight: 400; font-size: 28px; display: block; line-height: 1.1; }
+  .avance small { color: var(--muted); font-size: 13px; }
+
   /* ---------- Comments ---------- */
   .comments { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
   .cmt { display: flex; gap: 10px; margin-bottom: 12px; }
@@ -333,6 +369,11 @@
     .kpi:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
     .quick { grid-template-columns: 1fr; gap: 10px; }
     .sugs { grid-template-columns: 1fr 1fr; }
+    .kanban { grid-template-columns: repeat(4, 78%); overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; }
+    .col { scroll-snap-align: start; }
+    .avance { grid-template-columns: repeat(2, 1fr); }
+    .avance div:nth-child(2) { border-right: 0; }
+    .avance div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   }
   @media (max-width: 560px) {
     .wrap { padding: 0 16px; }
@@ -340,6 +381,8 @@
     .hero { padding: 28px 0 76px; }
     nav.tabs button { font-size: 13px; padding: 8px 8px; gap: 5px; }
     nav.tabs button svg { display: none; }
+    nav.tabs .long { display: none; }
+    nav.tabs button { flex: 0 0 auto; padding: 8px 10px; }
     .user-chip #userName { display: none; }
     .user-chip { padding: 4px; }
     .toolbar { flex-direction: column; align-items: stretch; }
@@ -365,8 +408,9 @@
     <nav class="tabs" id="tabs" aria-label="Secciones">
       <button type="button" data-ir="inicio"><svg><use href="#i-home"/></svg>Inicio</button>
       <button type="button" data-ir="generador"><svg><use href="#i-bulb"/></svg>Generador</button>
-      <button type="button" data-ir="asistente"><svg><use href="#i-spark"/></svg>Asistente IA</button>
+      <button type="button" data-ir="asistente"><svg><use href="#i-spark"/></svg><span><span class="long">Asistente </span>IA</span></button>
       <button type="button" data-ir="tablero"><svg><use href="#i-board"/></svg>Tablero</button>
+      <button type="button" data-ir="seguimiento"><svg><use href="#i-track"/></svg>Seguimiento</button>
     </nav>
     <button class="user-chip" id="userChip" type="button" title="Cambiar mi nombre">
       <span class="avatar" id="userAvatar">?</span><span id="userName">Escribe tu nombre</span>
@@ -397,6 +441,7 @@
         <button type="button" class="panel q" data-ir="asistente"><span class="qi"><svg><use href="#i-spark"/></svg></span><b>Platicar con la IA</b></button>
         <button type="button" class="panel q" data-open-propose><span class="qi"><svg><use href="#i-plus"/></svg></span><b>Proponer mi idea</b></button>
       </div>
+      <button type="button" class="panel avance" data-ir="seguimiento" id="avance" title="Ver seguimiento"></button>
       <div class="insights">
         <div class="panel">
           <h3>Top 5 · Ideas mejor calificadas</h3>
@@ -547,6 +592,16 @@
     </div>
   </div>
 </div>
+<!-- ============ SEGUIMIENTO ============ -->
+<div class="view" id="v-seguimiento">
+  <div class="page-head"><div class="wrap">
+    <span class="eyebrow">Del papel a la acción</span>
+    <h2>Seguimiento de ideas</h2>
+  </div></div>
+  <div class="wrap content">
+    <div class="kanban" id="kanban"></div>
+  </div>
+</div>
 </main>
 
 <footer>
@@ -602,6 +657,30 @@
   </form>
 </dialog>
 
+<!-- Diálogo: seguimiento -->
+<dialog id="dlgSeg">
+  <form id="segForm">
+    <div class="dlg-head"><h3 id="segTitulo">Seguimiento</h3><p>Actualiza en qué va esta idea.</p></div>
+    <div class="dlg-body">
+      <label class="f">Estado</label>
+      <div class="estados" id="segEstado"></div>
+      <label class="f" for="segResp">Responsable</label>
+      <input class="input" id="segResp" maxlength="80" placeholder="¿Quién la lleva?">
+      <label class="f" for="segFecha" id="segFechaLbl">Fecha objetivo</label>
+      <input class="input" id="segFecha" type="date">
+      <div id="segResBox" hidden>
+        <label class="f" for="segRes">¿Cómo nos fue?</label>
+        <textarea class="input" id="segRes" maxlength="1000" placeholder="Resultados, aprendizajes, números…"></textarea>
+      </div>
+      <p class="seg-meta" id="segMeta"></p>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-light" id="segCancel">Cancelar</button>
+      <button type="submit" class="btn btn-primary" id="segGuardar">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="lightbox" class="lightbox"><form method="dialog"><button style="all:unset;cursor:zoom-out"><img id="lbImg" alt=""></button></form></dialog>
 <div class="toast" id="toast"></div>
 
@@ -622,6 +701,7 @@
     <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></symbol>
     <symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3Z"/></symbol>
     <symbol id="i-board" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></symbol>
+    <symbol id="i-track" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4M4 4h11l-2 4 2 4H4"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
     <symbol id="i-facebook" viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v2.9h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12z"/></symbol>
@@ -643,7 +723,7 @@
   if (!voterId) { voterId = "v-" + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)); ls.set("da-voter", voterId); }
   const state = {
     nombre: ls.get("da-nombre") || "",
-    data: { ideas: [], votes: {}, mine: {}, stars: {}, myStars: {}, comments: {} },
+    data: { ideas: [], votes: {}, mine: {}, stars: {}, myStars: {}, comments: {}, seguimiento: {} },
     filtro: "", orden: "estrellas",
     genTipo: "ventas", genRed: "", genCant: 3, genImgs: [], genImgIds: null,
     abiertos: new Set(), replyTo: {}, cfotos: {},
@@ -811,6 +891,7 @@
       <div class="idea-top">
         <span class="tag ${i.tipo}">${CAT[i.tipo] || "Idea"}</span>
         ${i.red ? `<span class="tag red">${redIcon(i.red)}${esc(i.red)}</span>` : ""}
+        ${i.id && !String(i.id).startsWith("tmp") && state.data.ideas.some((x) => x.id === i.id) ? estadoTag(i.id) : ""}
       </div>
       <h3>${esc(i.titulo)}</h3>
       ${i.autor ? `<div class="meta"><span class="avatar">${initials(i.autor)}</span>${esc(i.autor)} · ${fecha(i.fecha)}</div>` : ""}
@@ -903,6 +984,7 @@
       state.data = await api(`/api/ideas?voter=${encodeURIComponent(voterId)}`);
       pintarMetricas();
       pintarTablero();
+      pintarSeguimiento();
     } catch (e) {
       $("#board").innerHTML = `<div class="empty" style="grid-column:1/-1">No pudimos cargar el tablero. ${esc(e.message)}</div>`;
     }
@@ -958,6 +1040,8 @@
     }
     const ir_ = t.closest("[data-ir]");
     if (ir_) { e.preventDefault(); return ir(ir_.dataset.ir); }
+    const sg = t.closest("[data-seg]");
+    if (sg && !t.closest("[data-move]")) return abrirSeg(sg.dataset.seg);
     const op = t.closest("[data-opinion]");
     if (op) {
       const id = op.dataset.opinion;
@@ -1227,8 +1311,150 @@
     }
   }
 
+  // ---------- Seguimiento ----------
+  const ESTADOS = [
+    ["nueva", "Nueva", "#8A99A8"],
+    ["planeacion", "En planeación", "#F5B301"],
+    ["planeada", "Planeada", "#2A5DB0"],
+    ["ejecutada", "Ejecutada", "#3BB54A"],
+  ];
+  const estadoDe = (id) => state.data.seguimiento?.[id]?.estado || "nueva";
+  const infoEstado = (e) => ESTADOS.find((x) => x[0] === e) || ESTADOS[0];
+  function estadoTag(id) {
+    const [, t, c] = infoEstado(estadoDe(id));
+    return `<button type="button" class="estado-tag" data-seg="${id}" title="Actualizar seguimiento"><i style="background:${c}"></i>${t}</button>`;
+  }
+  const fechaCorta = (f) => f ? new Date(f + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : "";
+  const hoyISO = () => new Date().toISOString().slice(0, 10);
+
+  function tarjetaSeg(i) {
+    const seg = state.data.seguimiento[i.id] || {}, e = estadoDe(i.id), k = ESTADOS.findIndex((x) => x[0] === e);
+    const vencida = seg.fecha && e !== "ejecutada" && seg.fecha < hoyISO();
+    const meta = [
+      seg.responsable && `👤 ${esc(seg.responsable)}`,
+      seg.fecha && `<span class="${vencida ? "late" : ""}">📅 ${e === "ejecutada" ? "" : vencida ? "Vencida · " : ""}${fechaCorta(seg.fecha)}</span>`,
+      state.data.stars[i.id]?.count && `★ ${avg(i.id).toFixed(1)}`,
+    ].filter(Boolean).join("");
+    return `<div class="kcard" draggable="true" data-kid="${i.id}" data-seg="${i.id}">
+      <span class="tag ${i.tipo}">${CAT[i.tipo] || "Idea"}</span>
+      <h4>${esc(i.titulo)}</h4>
+      ${meta ? `<div class="kmeta">${meta}</div>` : ""}
+      ${e === "ejecutada" && seg.resultado ? `<div class="kres">${esc(seg.resultado)}</div>` : ""}
+      <div class="kmove">
+        ${k > 0 ? `<button type="button" data-move="${i.id}" data-to="${ESTADOS[k - 1][0]}" title="Regresar a ${ESTADOS[k - 1][1]}">← ${ESTADOS[k - 1][1]}</button>` : ""}
+        ${k < 3 ? `<button type="button" data-move="${i.id}" data-to="${ESTADOS[k + 1][0]}" title="Pasar a ${ESTADOS[k + 1][1]}">${ESTADOS[k + 1][1]} →</button>` : ""}
+      </div>
+    </div>`;
+  }
+
+  function pintarSeguimiento() {
+    const porEstado = Object.fromEntries(ESTADOS.map(([e]) => [e, []]));
+    for (const i of state.data.ideas) porEstado[estadoDe(i.id)].push(i);
+    const orden = (a, b) => (state.data.seguimiento[b.id]?.actualizado || b.fecha).localeCompare(state.data.seguimiento[a.id]?.actualizado || a.fecha);
+    $("#kanban").innerHTML = ESTADOS.map(([e, t, c]) => `<section class="col" data-col="${e}">
+      <div class="col-head"><i style="background:${c}"></i>${t}<span>${porEstado[e].length}</span></div>
+      ${porEstado[e].sort(orden).map(tarjetaSeg).join("") || `<div class="col-empty">${e === "nueva" ? "Aquí llegan las ideas del tablero" : "Arrastra una idea aquí"}</div>`}
+    </section>`).join("");
+    $("#avance").innerHTML = ESTADOS.map(([e, t, c]) => `<div style="--c:${c}"><b>${porEstado[e].length}</b><small>${t}</small></div>`).join("");
+  }
+
+  async function guardarEstado(id, cambios) {
+    const antes = state.data.seguimiento[id];
+    const seg = { ...(antes || {}), ...cambios };
+    state.data.seguimiento[id] = { ...seg, actualizado: new Date().toISOString(), por: state.nombre };
+    pintarSeguimiento(); pintarTablero();
+    try {
+      const r = await api("/api/ideas", { action: "estado", ideaId: id, autor: state.nombre, estado: seg.estado || "nueva", responsable: seg.responsable, fecha: seg.fecha, resultado: seg.resultado });
+      state.data.seguimiento[id] = r.seguimiento;
+      if (cambios.estado && cambios.estado !== antes?.estado) toast(`Movida a “${infoEstado(cambios.estado)[1]}”`);
+    } catch (err) {
+      if (antes) state.data.seguimiento[id] = antes; else delete state.data.seguimiento[id];
+      pintarSeguimiento(); pintarTablero(); toast(err.message);
+    }
+  }
+
+  // Ventana de seguimiento
+  let segId = null, segEstado = "nueva";
+  function pintarEstadosDlg() {
+    $("#segEstado").innerHTML = ESTADOS.map(([e, t, c]) => `<button type="button" data-e="${e}" class="${e === segEstado ? "on" : ""}"><i style="background:${c}"></i>${t}</button>`).join("");
+    $("#segResBox").hidden = segEstado !== "ejecutada";
+    $("#segFechaLbl").textContent = segEstado === "ejecutada" ? "Fecha en que se ejecutó" : "Fecha objetivo";
+  }
+  async function abrirSeg(id) {
+    const idea = state.data.ideas.find((x) => x.id === id); if (!idea) return;
+    if (!(await conNombre())) return;
+    const seg = state.data.seguimiento[id] || {};
+    segId = id; segEstado = seg.estado || "nueva";
+    $("#segTitulo").textContent = idea.titulo;
+    $("#segResp").value = seg.responsable || "";
+    $("#segFecha").value = seg.fecha || "";
+    $("#segRes").value = seg.resultado || "";
+    $("#segMeta").textContent = seg.actualizado ? `Última actualización: ${seg.por || "Anónimo"}, ${fecha(seg.actualizado)}` : "";
+    pintarEstadosDlg();
+    $("#dlgSeg").showModal();
+  }
+  $("#segEstado").onclick = (e) => {
+    const b = e.target.closest("[data-e]"); if (!b) return;
+    const antes = segEstado;
+    segEstado = b.dataset.e;
+    // Al pasar a "Ejecutada", la fecha pasa a ser la de ejecución (hoy, editable).
+    if (segEstado === "ejecutada" && antes !== "ejecutada") $("#segFecha").value = hoyISO();
+    pintarEstadosDlg();
+  };
+  $("#segCancel").onclick = () => $("#dlgSeg").close();
+  $("#segForm").onsubmit = (e) => {
+    e.preventDefault();
+    $("#dlgSeg").close();
+    guardarEstado(segId, { estado: segEstado, responsable: $("#segResp").value.trim(), fecha: $("#segFecha").value, resultado: $("#segRes").value.trim() });
+  };
+
+  // Mover con botones o arrastrando
+  $("#kanban").addEventListener("click", async (e) => {
+    const mv = e.target.closest("[data-move]");
+    if (mv) {
+      e.stopPropagation();
+      if (!(await conNombre())) return;
+      const cambios = { estado: mv.dataset.to };
+      if (mv.dataset.to === "ejecutada" && !state.data.seguimiento[mv.dataset.move]?.fecha) cambios.fecha = hoyISO();
+      if (mv.dataset.to === "ejecutada") return abrirSegCon(mv.dataset.move, cambios);
+      return guardarEstado(mv.dataset.move, cambios);
+    }
+  }, true);
+  // Al marcar como ejecutada, abrimos la ventana para anotar el resultado.
+  async function abrirSegCon(id, cambios) {
+    await abrirSeg(id);
+    segEstado = cambios.estado;
+    if (cambios.estado === "ejecutada") $("#segFecha").value = hoyISO();
+    pintarEstadosDlg();
+    $("#segRes").focus();
+  }
+  let arrastrando = null;
+  $("#kanban").addEventListener("dragstart", (e) => {
+    const c = e.target.closest("[data-kid]"); if (!c) return;
+    arrastrando = c.dataset.kid; c.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", arrastrando);
+  });
+  $("#kanban").addEventListener("dragend", (e) => { e.target.closest?.("[data-kid]")?.classList.remove("dragging"); $$(".col.drop").forEach((c) => c.classList.remove("drop")); });
+  $("#kanban").addEventListener("dragover", (e) => {
+    const col = e.target.closest("[data-col]"); if (!col || !arrastrando) return;
+    e.preventDefault();
+    $$(".col.drop").forEach((c) => c !== col && c.classList.remove("drop"));
+    col.classList.add("drop");
+  });
+  $("#kanban").addEventListener("drop", async (e) => {
+    const col = e.target.closest("[data-col]"); if (!col || !arrastrando) return;
+    e.preventDefault();
+    const id = arrastrando; arrastrando = null;
+    col.classList.remove("drop");
+    if (col.dataset.col === estadoDe(id)) return;
+    if (!(await conNombre())) return;
+    if (col.dataset.col === "ejecutada") return abrirSegCon(id, { estado: "ejecutada", fecha: hoyISO() });
+    guardarEstado(id, { estado: col.dataset.col });
+  });
+
   // ---------- Pestañas ----------
-  const VISTAS = ["inicio", "generador", "asistente", "tablero"];
+  const VISTAS = ["inicio", "generador", "asistente", "tablero", "seguimiento"];
   function ir(vista, desdeHash) {
     if (!VISTAS.includes(vista)) vista = "inicio";
     VISTAS.forEach((v) => $("#v-" + v).classList.toggle("on", v === vista));

@@ -1,6 +1,6 @@
 # Laboratorio de Ideas · Distrito Aduanal
 
-Sitio para el equipo de Distrito Aduanal, organizado en 4 pestañas:
+Sitio para el equipo de Distrito Aduanal, organizado en 5 pestañas:
 - **Inicio**: métricas (ideas, votos, calificación promedio, Top 5 y participación por categoría) y accesos rápidos.
 - **Generador** de ideas de Ventas, Redes sociales (Facebook, Instagram, LinkedIn), Visibilidad y "Ser mejores":
   describe lo que quieres, elige cuántas ideas (1 a 6), sube hasta 3 imágenes de referencia y, si quieres, afina
@@ -9,6 +9,8 @@ Sitio para el equipo de Distrito Aduanal, organizado en 4 pestañas:
   Las imágenes se adjuntan a la idea al publicarla. Descripción, campos e imágenes se aprovechan cuando la IA está activa.
 - **Asistente IA** (Gemini): chat de lluvia de ideas dentro del sitio, que conoce a Distrito y las ideas del tablero.
 - **Tablero** compartido: estrellas, "me gusta / no me gusta", comentarios con respuestas, fotos y "Opinión IA".
+- **Seguimiento**: columnas Nueva → En planeación → Planeada → Ejecutada. Se mueve cada idea con botones o
+  arrastrándola; se anota responsable, fecha objetivo y, al ejecutarla, "¿Cómo nos fue?". Las fechas vencidas se marcan en rojo.
 
 Todo (ideas, votos, estrellas, comentarios y fotos) se guarda en **Netlify Blobs**, sin configurar una base de datos.
 
@@ -49,6 +51,11 @@ Sin la clave, el sitio funciona igual: el generador usa sus plantillas y el chat
   Para cambiar el modelo principal, agrega en Netlify la variable `GEMINI_MODEL` (ej. `gemini-3.8-flash`).
 - En el nivel gratuito, **Google puede usar lo que se escribe para mejorar sus productos**. No escribas datos
   confidenciales de clientes en el chat.
+
+**Velocidad de la IA:** el sitio pide a Gemini "pensar" lo mínimo para responder más rápido. Para ir aún más rápido
+(con respuestas algo más sencillas), agrega en Netlify la variable `GEMINI_MODEL` con un modelo "flash-lite"
+(por ejemplo `gemini-2.5-flash-lite`). Para medir: abre `tu-sitio.netlify.app/api/asistente?diagnostico=1`
+(muestra los modelos que usa y cuántos segundos tarda).
 
 **Para ajustar cómo "habla" la IA** (tono, servicios, hashtags), edita `EMPRESA` y `VOZ` en `netlify/lib/distrito.mjs`.
 
