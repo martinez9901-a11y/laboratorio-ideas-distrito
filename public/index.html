@@ -122,8 +122,8 @@
   .bar-row b { text-align: right; font-weight: 600; }
 
   /* ---------- Generator ---------- */
-  .gen { display: grid; grid-template-columns: 330px 1fr; gap: 20px; align-items: start; }
-  .gen-form { padding: 24px; position: sticky; top: 88px; }
+  .gen { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
+  .gen-form { padding: 22px; }
   .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg); padding: 5px; border-radius: 12px; margin-bottom: 18px; }
   .seg button { border: 0; background: transparent; padding: 10px 8px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--muted); }
   .seg button.on { background: #fff; color: var(--navy); box-shadow: 0 1px 4px rgba(15,36,54,.12); }
@@ -134,6 +134,29 @@
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
   .chip.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .count { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .count button { border: 1px solid var(--line); background: #fff; border-radius: 9px; padding: 8px 0; font-weight: 700; cursor: pointer; color: var(--muted); }
+  .count button:hover { border-color: var(--green); }
+  .count button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .img-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .img-row .thumbs { margin: 0; }
+  .img-add { display: inline-flex; align-items: center; gap: 6px; border: 1.5px dashed #B8C4CF; background: #FAFBFC; border-radius: 10px; height: 56px; padding: 0 14px; cursor: pointer; color: var(--navy-3); font-weight: 600; font-size: 14px; }
+  .img-add:hover { border-color: var(--green); color: var(--green-d); }
+  .img-add svg { width: 18px; height: 18px; }
+  .afinar { margin-top: 16px; border: 1px solid var(--line); border-radius: 12px; background: #FAFBFC; }
+  .afinar summary { cursor: pointer; padding: 12px 14px; font-weight: 700; font-size: 14px; list-style: none; display: flex; align-items: center; gap: 6px; }
+  .afinar summary::-webkit-details-marker { display: none; }
+  .afinar summary::before { content: "+"; width: 20px; height: 20px; border-radius: 6px; background: var(--green-l); color: var(--green-d); display: grid; place-items: center; font-weight: 800; }
+  .afinar[open] summary::before { content: "–"; }
+  .afinar-grid { display: grid; gap: 8px; padding: 0 14px 14px; }
+  .afinar-grid > div { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 8px; }
+  .afinar-grid .f { margin: 0; font-size: 12px; line-height: 1.25; }
+  .afinar-grid .input { padding: 8px 10px; font-size: 14px; min-width: 0; }
+  .ficha { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .ficha div { background: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  .ficha div.full { grid-column: 1 / -1; }
+  .ficha b { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  .aviso { font-size: 13px; color: #7A5A00; background: #FFF8E6; border: 1px solid #F3DDA0; border-radius: 10px; padding: 10px 12px; }
   .gen-form .btn { width: 100%; margin-top: 20px; }
   .hint:empty { display: none; }
   .hint { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: center; }
@@ -299,7 +322,6 @@
     .gen { grid-template-columns: 1fr; }
     .gen-form { position: static; }
     .gen-form .seg { grid-template-columns: repeat(4, 1fr); }
-    .fields { display: grid; grid-template-columns: 1fr 1fr 110px; gap: 12px; }
     .results .empty { padding: 36px 24px; }
     header.top .wrap { flex-wrap: wrap; height: auto; padding-top: 10px; padding-bottom: 0; row-gap: 8px; }
     .user-chip { margin-left: auto; }
@@ -322,7 +344,7 @@
     .user-chip { padding: 4px; }
     .toolbar { flex-direction: column; align-items: stretch; }
     .gen-form .seg { grid-template-columns: 1fr 1fr; }
-    .fields { grid-template-columns: 1fr; gap: 0; }
+    .ficha { grid-template-columns: 1fr; }
     .sort select { flex: 1; }
     .kpi { padding: 16px; }
     .kpi .v { font-size: 28px; }
@@ -414,14 +436,48 @@
             <button type="button" class="chip" data-red="LinkedIn"></button>
           </div>
         </div>
-        <div class="fields">
-        <div><label class="f" for="gTema">Tema <span class="opt">(opcional)</span></label>
-        <input class="input" id="gTema" maxlength="200" placeholder="Ej. e-commerce, T-MEC…"></div>
-        <div><label class="f" for="gPublico">Público <span class="opt">(opcional)</span></label>
-        <input class="input" id="gPublico" maxlength="200" placeholder="Ej. PyMEs que importan"></div>
-        <div><label class="f" for="gCant">¿Cuántas?</label>
-        <select class="input" id="gCant"><option>3</option><option selected>4</option><option>5</option><option>6</option></select></div>
+        <label class="f" for="gDesc">Describe lo que quieres</label>
+        <textarea class="input" id="gDesc" maxlength="1500" rows="3" placeholder="Ej. Queremos conseguir 5 clientes nuevos de e-commerce que importan de China antes de diciembre, con poco presupuesto."></textarea>
+
+        <label class="f">¿Cuántas ideas?</label>
+        <div class="count" id="gCant" role="radiogroup">
+          <button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3" class="on">3</button>
+          <button type="button" data-n="4">4</button><button type="button" data-n="5">5</button><button type="button" data-n="6">6</button>
         </div>
+
+        <label class="f">Imágenes de referencia <span class="opt">(opcional, hasta 3)</span></label>
+        <div class="img-row">
+          <button type="button" class="img-add" id="gImgBtn" title="Agregar imágenes"><svg><use href="#i-img"/></svg><span>Subir</span></button>
+          <div class="thumbs" id="gThumbs"></div>
+        </div>
+        <input type="file" id="gImgInput" accept="image/*" multiple hidden>
+
+        <details class="afinar" id="gAfinar">
+          <summary>Afinar la estrategia <span class="opt">(opcional)</span></summary>
+          <div class="afinar-grid">
+            <div><label class="f" for="gObjetivo">Objetivo</label>
+              <input class="input" id="gObjetivo" maxlength="300" placeholder="Ej. 10 prospectos al mes"></div>
+            <div><label class="f" for="gPublico">Cliente ideal</label>
+              <input class="input" id="gPublico" maxlength="300" placeholder="Ej. PyMEs que importan de Asia"></div>
+            <div><label class="f" for="gServicio">Servicio</label>
+              <select class="input" id="gServicio">
+                <option value="">Cualquiera</option><option>Despacho de importación</option><option>Despacho de exportación</option>
+                <option>Clasificación arancelaria</option><option>Programa IMMEX</option><option>Certificación IVA/IEPS</option>
+                <option>OEA</option><option>T-MEC y tratados</option><option>Logística y transporte</option><option>Asesoría en comercio exterior</option>
+              </select></div>
+            <div><label class="f" for="gPlazo">Plazo</label>
+              <select class="input" id="gPlazo"><option value="">Sin definir</option><option>Esta semana</option><option>Este mes</option><option>3 meses</option><option>6 meses</option><option>Todo el año</option></select></div>
+            <div><label class="f" for="gPresupuesto">Presupuesto</label>
+              <select class="input" id="gPresupuesto"><option value="">Sin definir</option><option>Sin costo</option><option>Bajo (menos de $5,000)</option><option>Medio ($5,000 a $30,000)</option><option>Alto (más de $30,000)</option></select></div>
+            <div><label class="f" for="gTono">Tono</label>
+              <select class="input" id="gTono"><option value="">Voz de Distrito</option><option>Formal y experto</option><option>Cercano y humano</option><option>Educativo</option><option>Inspirador</option><option>Divertido</option></select></div>
+            <div><label class="f" for="gEvitar">Qué evitar</label>
+              <input class="input" id="gEvitar" maxlength="400" placeholder="Ej. ya probamos webinars"></div>
+            <div><label class="f" for="gMetrica">Métrica clave</label>
+              <input class="input" id="gMetrica" maxlength="200" placeholder="Ej. Cotizaciones cerradas"></div>
+          </div>
+        </details>
+
         <button class="btn btn-primary" type="submit" id="genBtn"><svg width="18" height="18"><use href="#i-bulb"/></svg>Generar ideas</button>
         <div class="hint" id="genHint"></div>
       </form>
@@ -589,7 +645,7 @@
     nombre: ls.get("da-nombre") || "",
     data: { ideas: [], votes: {}, mine: {}, stars: {}, myStars: {}, comments: {} },
     filtro: "", orden: "estrellas",
-    genTipo: "ventas", genRed: "",
+    genTipo: "ventas", genRed: "", genCant: 3, genImgs: [], genImgIds: null,
     abiertos: new Set(), replyTo: {}, cfotos: {},
     pFotos: [], generadas: [],
     opinando: {}, iaActiva: false, chat: [], chateando: false, expandidos: new Set(),
@@ -735,9 +791,22 @@
   }
 
   // ---------- Tarjeta de idea ----------
+  const FICHA = [["objetivo", "Objetivo"], ["publico", "Público"], ["tiempo", "Tiempo"], ["presupuesto", "Presupuesto"], ["canales", "Canales"], ["mensaje", "Mensaje clave"], ["riesgos", "Cuidado con"]];
+  const fichaDe = (i) => Object.fromEntries(FICHA.map(([k]) => [k, i[k]]).filter(([, v]) => v?.length));
+  function textoIdea(i) {
+    const f = i.ficha || {};
+    return [i.titulo, "", i.descripcion, i.diferenciador && `\nNos diferencia: ${i.diferenciador}`,
+      ...FICHA.filter(([k]) => f[k]?.length).map(([k, et]) => `${et}: ${Array.isArray(f[k]) ? f[k].join(", ") : f[k]}`),
+      i.pasos?.length && "\nPasos:\n" + i.pasos.map((p, n) => `${n + 1}. ${p}`).join("\n"),
+      i.metricas?.length && "\nMétricas:\n" + i.metricas.map((m) => `• ${m}`).join("\n")].filter(Boolean).join("\n");
+  }
   function cuerpoIdea(i) {
     const pasos = i.pasos?.length ? `<div class="box"><h4>Primeros pasos</h4><ol>${i.pasos.map((p) => `<li>${esc(p)}</li>`).join("")}</ol></div>` : "";
     const met = i.metricas?.length ? `<div class="box kpi-box"><h4>Cómo lo medimos</h4><ul>${i.metricas.map((m) => `<li>${esc(m)}</li>`).join("")}</ul></div>` : "";
+    const f = i.ficha || {};
+    const celdas = FICHA.filter(([k]) => f[k]?.length).map(([k, et]) =>
+      `<div class="${["canales", "mensaje", "riesgos"].includes(k) ? "full" : ""}"><b>${et}</b>${esc(Array.isArray(f[k]) ? f[k].join(" · ") : f[k])}</div>`).join("");
+    const ficha = celdas ? `<div class="ficha">${celdas}</div>` : "";
     return `
       <div class="idea-top">
         <span class="tag ${i.tipo}">${CAT[i.tipo] || "Idea"}</span>
@@ -747,8 +816,9 @@
       ${i.autor ? `<div class="meta"><span class="avatar">${initials(i.autor)}</span>${esc(i.autor)} · ${fecha(i.fecha)}</div>` : ""}
       <p class="desc">${esc(i.descripcion)}</p>
       ${fotosHTML(i.fotos)}
-      ${i.diferenciador || pasos || met ? `<div class="more">
+      ${i.diferenciador || pasos || met || ficha ? `<div class="more">
         ${i.diferenciador ? `<div class="diff"><b>Nos diferencia:</b><span>${esc(i.diferenciador)}</span></div>` : ""}
+        ${ficha}
         ${pasos || met ? `<div class="cols">${pasos}${met}</div>` : ""}
       </div>
       <button type="button" class="more-btn" data-more>Ver detalles</button>` : ""}`;
@@ -927,6 +997,7 @@
     if (rm) {
       const [k, id] = rm.dataset.rm.split(":");
       if (k === "c") { state.cfotos[id].splice(+rm.dataset.i, 1); pintarTablero(); }
+      else if (k === "g") { state.genImgs.splice(+rm.dataset.i, 1); state.genImgIds = null; $("#gThumbs").innerHTML = thumbsHTML(state.genImgs, "g:"); }
       else { state.pFotos.splice(+rm.dataset.i, 1); $("#pThumbs").innerHTML = thumbsHTML(state.pFotos, "p:"); }
       return;
     }
@@ -960,6 +1031,7 @@
   function abrirPropuesta(pre) {
     const f = $("#proposeForm"); f.reset(); state.pFotos = []; $("#pThumbs").innerHTML = "";
     state.pDiff = pre?.diferenciador || "";
+    state.pFicha = pre?.ficha;
     if (pre) {
       $("#pTipo").value = pre.tipo; $("#pRed").value = pre.red || ""; $("#pTitulo").value = pre.titulo;
       $("#pDesc").value = pre.descripcion; $("#pPasos").value = (pre.pasos || []).join("\n"); $("#pMet").value = (pre.metricas || []).join("\n");
@@ -981,7 +1053,7 @@
       await api("/api/ideas", {
         action: "publicar", tipo: $("#pTipo").value, red: $("#pTipo").value === "redes" ? $("#pRed").value : "",
         titulo: $("#pTitulo").value, descripcion: $("#pDesc").value, pasos: lines($("#pPasos").value), metricas: lines($("#pMet").value),
-        autor: state.nombre, fotos, diferenciador: state.pDiff,
+        autor: state.nombre, fotos, diferenciador: state.pDiff, ficha: state.pFicha,
       });
       $("#dlgPropose").close();
       await cargar();
@@ -1003,16 +1075,41 @@
     $$("#genRed .chip").forEach((x) => x.classList.toggle("on", x === b));
     state.genRed = b.dataset.red;
   };
+  $("#gCant").onclick = (e) => {
+    const b = e.target.closest("[data-n]"); if (!b) return;
+    $$("#gCant button").forEach((x) => x.classList.toggle("on", x === b));
+    state.genCant = +b.dataset.n;
+  };
+  $("#gImgBtn").onclick = () => $("#gImgInput").click();
+  $("#gImgInput").onchange = async (e) => {
+    const antes = state.genImgs.length;
+    for (const file of [...e.target.files].slice(0, 3 - state.genImgs.length)) {
+      if (!file.type.startsWith("image/")) continue;
+      try { state.genImgs.push({ data: await reducir(file, 1280) }); } catch (err) { toast(err.message); }
+    }
+    if (e.target.files.length > 3 - antes) toast("Máximo 3 imágenes");
+    e.target.value = ""; state.genImgIds = null;
+    $("#gThumbs").innerHTML = thumbsHTML(state.genImgs, "g:");
+  };
+
   $("#genForm").onsubmit = async (e) => {
     e.preventDefault();
     const btn = $("#genBtn"); btn.disabled = true;
-    const n = +$("#gCant").value;
+    const n = state.genCant;
+    const v = (id) => $(id).value.trim();
     $("#results").innerHTML = Array.from({ length: Math.min(n, 3) }, () => `<div class="panel loading-card"><div class="sk" style="width:25%"></div><div class="sk" style="width:70%;height:22px"></div><div class="sk"></div><div class="sk" style="width:85%"></div><div class="sk" style="width:50%"></div></div>`).join("");
     try {
-      const r = await api("/api/generar", { tipo: state.genTipo, red: state.genRed, tema: $("#gTema").value, publico: $("#gPublico").value, cantidad: n });
-      state.generadas = r.ideas.map((i) => ({ ...i, tipo: state.genTipo }));
+      const r = await api("/api/generar", {
+        tipo: state.genTipo, red: state.genRed, cantidad: n,
+        descripcion: v("#gDesc"), objetivo: v("#gObjetivo"), publico: v("#gPublico"), servicio: v("#gServicio"),
+        plazo: v("#gPlazo"), presupuesto: v("#gPresupuesto"), tono: v("#gTono"), evitar: v("#gEvitar"), metrica: v("#gMetrica"),
+        imagenes: state.genImgs.map((f) => f.data),
+      });
+      state.generadas = r.ideas.map((i) => ({ ...i, tipo: state.genTipo, ficha: fichaDe(i) }));
       $("#genHint").textContent = r.fuente === "ia" ? "✦ Creadas con IA" : "";
-      $("#results").innerHTML = state.generadas.map((i, k) => `<article class="panel idea">${cuerpoIdea(i)}
+      const aviso = r.fuente !== "ia" && (r.aviso || state.genImgs.length || v("#gDesc").length > 50)
+        ? `<div class="aviso">${r.aviso ? esc(r.aviso) + " " : ""}Estas ideas salieron de nuestro banco de plantillas; la descripción, los campos para afinar y las imágenes se aprovechan cuando la IA está activa.</div>` : "";
+      $("#results").innerHTML = aviso + state.generadas.map((i, k) => `<article class="panel idea">${cuerpoIdea(i)}
         <div class="actions">
           <button type="button" class="btn btn-primary btn-sm" data-publish="${k}" title="Publicar en el tablero">Publicar</button>
           <button type="button" class="btn btn-light btn-sm" data-edit="${k}" title="Editar antes de publicar">Editar</button>
@@ -1030,13 +1127,12 @@
     if (dv) {
       const i = state.generadas[+dv.dataset.develop];
       ir("asistente");
-      return enviarChat(`Desarrolla a fondo esta idea y dame 3 variantes mejoradas, con pasos y métricas.\nIdea: ${i.titulo}\n${i.descripcion}${i.pasos?.length ? `\nPasos: ${i.pasos.join("; ")}` : ""}`);
+      return enviarChat(`Desarrolla a fondo esta idea y dame 3 variantes mejoradas, con pasos y métricas.\n\n${textoIdea(i)}`);
     }
     if (ed) return abrirPropuesta(state.generadas[+ed.dataset.edit]);
     if (cp) {
       const i = state.generadas[+cp.dataset.copy];
-      const txt = [i.titulo, "", i.descripcion, i.diferenciador && `\nNos diferencia: ${i.diferenciador}`, i.pasos?.length && "\nPrimeros pasos:\n" + i.pasos.map((p, n) => `${n + 1}. ${p}`).join("\n"), i.metricas?.length && "\nMétricas:\n" + i.metricas.map((m) => `• ${m}`).join("\n")].filter(Boolean).join("\n");
-      try { await navigator.clipboard.writeText(txt); toast("Copiado al portapapeles"); } catch { toast("No se pudo copiar"); }
+      try { await navigator.clipboard.writeText(textoIdea(i)); toast("Copiado al portapapeles"); } catch { toast("No se pudo copiar"); }
       return;
     }
     if (!pub) return;
@@ -1044,7 +1140,9 @@
     const i = state.generadas[+pub.dataset.publish];
     pub.disabled = true;
     try {
-      await api("/api/ideas", { action: "publicar", origen: "generador", autor: state.nombre, ...i });
+      // Las imágenes de referencia se adjuntan a la idea (se suben una sola vez).
+      if (state.genImgs.length && !state.genImgIds) state.genImgIds = await subirFotos(state.genImgs);
+      await api("/api/ideas", { action: "publicar", origen: "generador", autor: state.nombre, ...i, fotos: state.genImgIds || [] });
       pub.textContent = "✓ Publicada"; toast("¡Idea publicada en el tablero!");
       cargar();
     } catch (err) { toast(err.message); pub.disabled = false; }

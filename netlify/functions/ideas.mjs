@@ -23,6 +23,17 @@ const SEMILLAS = [
 ].map((i) => ({ red: "", autor: "Equipo Distrito", origen: "semilla", fecha: "2026-09-25T00:00:00.000Z", ...i }));
 
 const fotoIds = (v, max) => (Array.isArray(v) ? v : []).filter((f) => ID.test(String(f))).slice(0, max);
+// Ficha de estrategia (objetivo, público, mensaje, canales, tiempo, presupuesto, riesgos).
+const FICHA = ["objetivo", "publico", "mensaje", "tiempo", "presupuesto", "riesgos"];
+function leerFicha(f) {
+  if (!f || typeof f !== "object") return undefined;
+  const out = {};
+  for (const k of FICHA) if (f[k]) out[k] = clean(f[k], 400);
+  const canales = (Array.isArray(f.canales) ? f.canales : []).slice(0, 8).map((c) => clean(c, 80)).filter(Boolean);
+  if (canales.length) out.canales = canales;
+  return Object.keys(out).length ? out : undefined;
+}
+
 const newId = (p) => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 export default async (req) => {
@@ -93,6 +104,7 @@ export default async (req) => {
       fotos: fotoIds(body.fotos, 4),
       metricas: (Array.isArray(body.metricas) ? body.metricas : []).slice(0, 6).map((m) => clean(m, 200)).filter(Boolean),
       diferenciador: clean(body.diferenciador, 400),
+      ficha: leerFicha(body.ficha),
       fecha: new Date().toISOString(),
     };
     if (!idea.titulo) return json({ error: "Falta el título" }, 400);

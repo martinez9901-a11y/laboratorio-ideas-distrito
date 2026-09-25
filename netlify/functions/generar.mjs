@@ -14,6 +14,7 @@ const TIPO_TXT = {
 // Esquema de respuesta en el formato de Gemini.
 const TEXTO = { type: "STRING" };
 const LISTA = { type: "ARRAY", items: { type: "STRING" } };
+const CAMPOS_FICHA = ["objetivo", "publico", "mensaje", "canales", "tiempo", "presupuesto", "riesgos"];
 const ESQUEMA = {
   type: "OBJECT",
   required: ["ideas"],
@@ -22,20 +23,51 @@ const ESQUEMA = {
       type: "ARRAY",
       items: {
         type: "OBJECT",
-        required: ["titulo", "descripcion", "pasos", "red", "diferenciador", "metricas"],
-        propertyOrdering: ["titulo", "red", "descripcion", "diferenciador", "pasos", "metricas"],
-        properties: { titulo: TEXTO, red: TEXTO, descripcion: TEXTO, diferenciador: TEXTO, pasos: LISTA, metricas: LISTA },
+        required: ["titulo", "red", "descripcion", "diferenciador", ...CAMPOS_FICHA, "pasos", "metricas"],
+        propertyOrdering: ["titulo", "red", "descripcion", "diferenciador", ...CAMPOS_FICHA, "pasos", "metricas"],
+        properties: {
+          titulo: TEXTO,
+          red: TEXTO,
+          descripcion: TEXTO,
+          diferenciador: TEXTO,
+          objetivo: TEXTO,
+          publico: TEXTO,
+          mensaje: TEXTO,
+          canales: LISTA,
+          tiempo: TEXTO,
+          presupuesto: TEXTO,
+          riesgos: TEXTO,
+          pasos: LISTA,
+          metricas: LISTA,
+        },
       },
     },
   },
 };
 
-async function conIA({ tipo, red, tema, publico, cantidad }) {
+const ETIQUETAS = {
+  descripcion: "Lo que queremos (descrito por el equipo)",
+  objetivo: "Objetivo principal",
+  publico: "Cliente ideal / público",
+  servicio: "Servicio a promover",
+  plazo: "Plazo",
+  presupuesto: "Presupuesto disponible",
+  tono: "Tono",
+  evitar: "Qué evitar o qué ya probamos",
+  metrica: "Métrica que más nos importa",
+};
+
+async function conIA(p) {
   const detalleRed =
-    tipo === "redes"
-      ? `Red social: ${red || "Facebook, Instagram y LinkedIn (reparte las ideas entre las tres)"}.
-Para cada idea: "descripcion" incluye el formato (carrusel, reel, post, artículo, video corto), el gancho inicial y un borrador del texto (copy) listo para publicar con hashtags. "pasos" = cómo producirla. "red" = la red social.`
-      : `"pasos" = 3 a 5 primeros pasos concretos para ejecutarla. "red" = cadena vacía salvo que la idea sea para una red social específica.`;
+    p.tipo === "redes"
+      ? `Red social: ${p.red || "Facebook, Instagram y LinkedIn (reparte las ideas entre las tres)"}.
+En "descripcion" incluye el formato (carrusel, reel, post, artículo, video corto), el gancho inicial y el texto (copy) listo para publicar con hashtags. "red" = la red social.`
+      : `"red" = cadena vacía salvo que la idea sea para una red social específica.`;
+
+  const brief = Object.entries(ETIQUETAS)
+    .filter(([k]) => p[k])
+    .map(([k, etiqueta]) => `- ${etiqueta}: ${p[k]}`)
+    .join("\n");
 
   const { ideas } = await geminiJSON({
     sistema: `${VOZ}\n\n${EMPRESA}`,
@@ -43,18 +75,43 @@ Para cada idea: "descripcion" incluye el formato (carrusel, reel, post, artícul
     mensajes: [
       {
         role: "user",
-        content: `Genera ${cantidad} ${TIPO_TXT[tipo]} para Distrito Aduanal.
-${tema ? `Tema u objetivo: ${tema}.` : ""}
-${publico ? `Público objetivo: ${publico}.` : ""}
+        imagenes: p.imagenes,
+        content: `Genera ${p.cantidad} ${TIPO_TXT[p.tipo]} para Distrito Aduanal.
+
+${brief ? `BRIEF DEL EQUIPO (respétalo al pie de la letra; es lo más importante):\n${brief}\n` : "No hay brief: propón ideas variadas.\n"}
+${p.imagenes.length ? `Adjuntamos ${p.imagenes.length} imagen(es) de referencia: analízalas y úsalas como contexto (estilo, producto, competencia, evento, etc.).\n` : ""}
 ${detalleRed}
-Que sean ideas variadas, originales y realistas; evita lo que ya hace cualquier agencia aduanal.
-"metricas" = 2 o 3 KPIs concretos para medir el éxito, cada uno con una meta sugerida (ej. "Prospectos generados: 15 al mes").
-"diferenciador" = una frase que explique por qué esta idea pone a Distrito por encima de la competencia.`,
+
+Cada idea debe ser un plan sólido y aterrizado, no una generalidad. Campos:
+- "titulo": nombre corto y atractivo.
+- "descripcion": en qué consiste, en 2 a 4 frases concretas.
+- "diferenciador": por qué nos pone por encima de la competencia (1 frase).
+- "objetivo": qué resultado de negocio buscamos.
+- "publico": a quién va dirigida exactamente.
+- "mensaje": el mensaje clave que queremos que recuerden (1 frase).
+- "canales": dónde se ejecuta (lista corta).
+- "tiempo": duración o calendario sugerido.
+- "presupuesto": estimado aproximado en pesos mexicanos o "Sin costo".
+- "riesgos": el principal riesgo y cómo evitarlo (1 frase).
+- "pasos": 3 a 5 pasos concretos, en orden, con responsable o fecha cuando aplique.
+- "metricas": 2 o 3 KPIs, cada uno con meta (ej. "Prospectos generados: 15 al mes").
+Que sean originales y realistas para una agencia aduanal; evita lo que ya hace cualquier competidor.`,
       },
     ],
   });
   if (!Array.isArray(ideas) || !ideas.length) throw new Error("Respuesta vacía de la IA");
-  return ideas.slice(0, cantidad);
+  return ideas.slice(0, p.cantidad);
+}
+
+const texto = (v, max) => String(v ?? "").trim().slice(0, max);
+
+// Imágenes de referencia: data URL de imagen, máximo 3 y ~1.5 MB cada una.
+function leerImagenes(lista) {
+  return (Array.isArray(lista) ? lista : [])
+    .slice(0, 3)
+    .map((d) => /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(d)))
+    .filter((m) => m && m[2].length < 2_000_000)
+    .map((m) => ({ mimeType: m[1], data: m[2] }));
 }
 
 export default async (req) => {
@@ -68,10 +125,20 @@ export default async (req) => {
   const params = {
     tipo: ["ventas", "redes", "visibilidad", "mejora"].includes(body.tipo) ? body.tipo : "ventas",
     red: ["Facebook", "Instagram", "LinkedIn"].includes(body.red) ? body.red : "",
-    tema: String(body.tema ?? "").slice(0, 200),
-    publico: String(body.publico ?? "").slice(0, 200),
-    cantidad: Math.min(Math.max(parseInt(body.cantidad) || 4, 1), 6),
+    cantidad: Math.min(Math.max(parseInt(body.cantidad) || 3, 1), 6),
+    descripcion: texto(body.descripcion, 1500),
+    objetivo: texto(body.objetivo, 300),
+    publico: texto(body.publico, 300),
+    servicio: texto(body.servicio, 120),
+    plazo: texto(body.plazo, 80),
+    presupuesto: texto(body.presupuesto, 80),
+    tono: texto(body.tono, 80),
+    evitar: texto(body.evitar, 400),
+    metrica: texto(body.metrica, 200),
+    imagenes: leerImagenes(body.imagenes),
   };
+  // Para las plantillas (sin IA): el tema corto se usa en los títulos.
+  const sinIA = () => generarSinIA({ ...params, tema: params.descripcion.length <= 50 ? params.descripcion : params.servicio });
 
   if (iaActiva()) {
     return jsonConEspera(
@@ -79,11 +146,11 @@ export default async (req) => {
         .then((ideas) => ({ fuente: "ia", ideas }))
         .catch((err) => {
           console.error("Error con Gemini, uso plantillas:", err);
-          return { fuente: "plantillas", ideas: generarSinIA(params) };
+          return { fuente: "plantillas", aviso: err.publico || "", ideas: sinIA() };
         }),
     );
   }
-  return json({ fuente: "plantillas", ideas: generarSinIA(params) });
+  return json({ fuente: "plantillas", ideas: sinIA() });
 };
 
 export const config = { path: "/api/generar" };

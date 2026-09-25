@@ -2,7 +2,11 @@
 
 Sitio para el equipo de Distrito Aduanal, organizado en 4 pestañas:
 - **Inicio**: métricas (ideas, votos, calificación promedio, Top 5 y participación por categoría) y accesos rápidos.
-- **Generador** de ideas de Ventas, Redes sociales (Facebook, Instagram, LinkedIn), Visibilidad y "Ser mejores"; cada idea trae pasos, métricas y lo que nos diferencia.
+- **Generador** de ideas de Ventas, Redes sociales (Facebook, Instagram, LinkedIn), Visibilidad y "Ser mejores":
+  describe lo que quieres, elige cuántas ideas (1 a 6), sube hasta 3 imágenes de referencia y, si quieres, afina
+  objetivo, cliente ideal, servicio, plazo, presupuesto, tono, qué evitar y métrica clave. Cada idea trae una ficha
+  (objetivo, público, tiempo, presupuesto, canales, mensaje clave, riesgos), pasos, métricas y lo que nos diferencia.
+  Las imágenes se adjuntan a la idea al publicarla. Descripción, campos e imágenes se aprovechan cuando la IA está activa.
 - **Asistente IA** (Gemini): chat de lluvia de ideas dentro del sitio, que conoce a Distrito y las ideas del tablero.
 - **Tablero** compartido: estrellas, "me gusta / no me gusta", comentarios con respuestas, fotos y "Opinión IA".
 

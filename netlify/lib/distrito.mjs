@@ -103,9 +103,12 @@ const textoDe = (data) =>
     .map((p) => p.text)
     .join("");
 
-// mensajes: [{ role: "user" | "assistant", content }]
+// mensajes: [{ role: "user" | "assistant", content, imagenes?: [{ mimeType, data (base64) }] }]
 const contenidos = (mensajes) =>
-  mensajes.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+  mensajes.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [...(m.imagenes || []).map((img) => ({ inlineData: img })), { text: m.content }],
+  }));
 
 // Respuesta completa en JSON validada contra `esquema` (formato de esquema de Gemini).
 export async function geminiJSON({ sistema, mensajes, esquema }) {
