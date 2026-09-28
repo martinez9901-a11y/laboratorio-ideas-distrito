@@ -1,7 +1,7 @@
 // Generador de ideas (lluvia de ideas).
 // Con GEMINI_API_KEY configurada en Netlify usa la IA de Gemini (nivel gratuito);
 // sin ella, o si la IA falla, usa el banco de plantillas de ../lib/plantillas.mjs.
-import { EMPRESA, VOZ, json, jsonConEspera, geminiJSON, iaActiva } from "../lib/distrito.mjs";
+import { EMPRESA, VOZ, json, jsonConEspera, geminiJSON, iaActiva, ESQUEMA_IDEAS, CAMPOS_IDEA } from "../lib/distrito.mjs";
 import { generarSinIA } from "../lib/plantillas.mjs";
 
 const TIPO_TXT = {
@@ -9,40 +9,6 @@ const TIPO_TXT = {
   redes: "ideas de publicaciones para redes sociales",
   visibilidad: "acciones para dar visibilidad y posicionar la marca de la empresa",
   mejora: "acciones para ser mejores que la competencia (servicio, tiempos, experiencia del cliente, tecnología) y demostrarlo con métricas",
-};
-
-// Esquema de respuesta en el formato de Gemini.
-const TEXTO = { type: "STRING" };
-const LISTA = { type: "ARRAY", items: { type: "STRING" } };
-const CAMPOS_FICHA = ["objetivo", "publico", "mensaje", "canales", "tiempo", "presupuesto", "riesgos"];
-const ESQUEMA = {
-  type: "OBJECT",
-  required: ["ideas"],
-  properties: {
-    ideas: {
-      type: "ARRAY",
-      items: {
-        type: "OBJECT",
-        required: ["titulo", "red", "descripcion", "diferenciador", ...CAMPOS_FICHA, "pasos", "metricas"],
-        propertyOrdering: ["titulo", "red", "descripcion", "diferenciador", ...CAMPOS_FICHA, "pasos", "metricas"],
-        properties: {
-          titulo: TEXTO,
-          red: TEXTO,
-          descripcion: TEXTO,
-          diferenciador: TEXTO,
-          objetivo: TEXTO,
-          publico: TEXTO,
-          mensaje: TEXTO,
-          canales: LISTA,
-          tiempo: TEXTO,
-          presupuesto: TEXTO,
-          riesgos: TEXTO,
-          pasos: LISTA,
-          metricas: LISTA,
-        },
-      },
-    },
-  },
 };
 
 const ETIQUETAS = {
@@ -71,7 +37,7 @@ En "descripcion" incluye el formato (carrusel, reel, post, artículo, video cort
 
   const { ideas } = await geminiJSON({
     sistema: `${VOZ}\n\n${EMPRESA}`,
-    esquema: ESQUEMA,
+    esquema: ESQUEMA_IDEAS,
     mensajes: [
       {
         role: "user",
@@ -83,18 +49,7 @@ ${p.imagenes.length ? `Adjuntamos ${p.imagenes.length} imagen(es) de referencia:
 ${detalleRed}
 
 Cada idea debe ser un plan sólido y aterrizado, no una generalidad. Campos:
-- "titulo": nombre corto y atractivo.
-- "descripcion": en qué consiste, en 2 a 4 frases concretas.
-- "diferenciador": por qué nos pone por encima de la competencia (1 frase).
-- "objetivo": qué resultado de negocio buscamos.
-- "publico": a quién va dirigida exactamente.
-- "mensaje": el mensaje clave que queremos que recuerden (1 frase).
-- "canales": dónde se ejecuta (lista corta).
-- "tiempo": duración o calendario sugerido.
-- "presupuesto": estimado aproximado en pesos mexicanos o "Sin costo".
-- "riesgos": el principal riesgo y cómo evitarlo (1 frase).
-- "pasos": 3 a 5 pasos concretos, en orden, con responsable o fecha cuando aplique.
-- "metricas": 2 o 3 KPIs, cada uno con meta (ej. "Prospectos generados: 15 al mes").
+${CAMPOS_IDEA}
 Que sean originales y realistas para una agencia aduanal; evita lo que ya hace cualquier competidor.`,
       },
     ],

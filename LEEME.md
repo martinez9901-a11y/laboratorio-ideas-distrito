@@ -8,7 +8,10 @@ Sitio para el equipo de Distrito Aduanal, organizado en 5 pestañas:
   (objetivo, público, tiempo, presupuesto, canales, mensaje clave, riesgos), pasos, métricas y lo que nos diferencia.
   Las imágenes se adjuntan a la idea al publicarla. Descripción, campos e imágenes se aprovechan cuando la IA está activa.
 - **Asistente IA** (Gemini): chat de lluvia de ideas dentro del sitio, que conoce a Distrito y las ideas del tablero.
-- **Tablero** compartido: estrellas, "me gusta / no me gusta", comentarios con respuestas, fotos y "Opinión IA".
+- **Tablero** compartido: estrellas, "me gusta / no me gusta", comentarios con respuestas, fotos, "Opinión IA" y
+  **"Mejorar con IA"** (reescribe la idea con los comentarios del equipo; guarda la versión anterior en `versiones/`).
+- **En vivo**: cada 20 s (con la pestaña a la vista) el sitio revisa si alguien agregó o cambió algo y lo muestra solo,
+  con un aviso ("Nueva idea de Ana…"). Si no hubo cambios, la consulta es mínima para no gastar el plan de Netlify.
 - **Seguimiento**: columnas Nueva → En planeación → Planeada → Ejecutada. Se mueve cada idea con botones o
   arrastrándola; se anota responsable, fecha objetivo y, al ejecutarla, "¿Cómo nos fue?". Las fechas vencidas se marcan en rojo.
 

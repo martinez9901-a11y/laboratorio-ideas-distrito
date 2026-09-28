@@ -11,6 +11,51 @@ Escribe con la voz de Distrito: humana, cercana y cálida, pero formal y profesi
 sus historias) y evita tecnicismos innecesarios o frases de robot. Usa hashtags de marca como #SomosDistrito y #DistritoAduanal
 cuando se trate de redes sociales. Español de México.`;
 
+// ---------------------------------------------------------------------------
+// Estructura de una idea (formato de esquema de Gemini), usada por el generador y por "Mejorar con IA".
+// ---------------------------------------------------------------------------
+const TEXTO = { type: "STRING" };
+const LISTA = { type: "ARRAY", items: { type: "STRING" } };
+export const CAMPOS_FICHA = ["objetivo", "publico", "mensaje", "canales", "tiempo", "presupuesto", "riesgos"];
+export const ESQUEMA_IDEA = {
+  type: "OBJECT",
+  required: ["titulo", "red", "descripcion", "diferenciador", ...CAMPOS_FICHA, "pasos", "metricas"],
+  propertyOrdering: ["titulo", "red", "descripcion", "diferenciador", ...CAMPOS_FICHA, "pasos", "metricas"],
+  properties: {
+    titulo: TEXTO,
+    red: TEXTO,
+    descripcion: TEXTO,
+    diferenciador: TEXTO,
+    objetivo: TEXTO,
+    publico: TEXTO,
+    mensaje: TEXTO,
+    canales: LISTA,
+    tiempo: TEXTO,
+    presupuesto: TEXTO,
+    riesgos: TEXTO,
+    pasos: LISTA,
+    metricas: LISTA,
+  },
+};
+export const ESQUEMA_IDEAS = { type: "OBJECT", required: ["ideas"], properties: { ideas: { type: "ARRAY", items: ESQUEMA_IDEA } } };
+// Qué debe contener cada campo (se incluye en las instrucciones a la IA).
+export const CAMPOS_IDEA = `- "titulo": nombre corto y atractivo.
+- "descripcion": en qué consiste, en 2 a 4 frases concretas.
+- "diferenciador": por qué nos pone por encima de la competencia (1 frase).
+- "objetivo": qué resultado de negocio buscamos.
+- "publico": a quién va dirigida exactamente.
+- "mensaje": el mensaje clave que queremos que recuerden (1 frase).
+- "canales": dónde se ejecuta (lista corta).
+- "tiempo": duración o calendario sugerido.
+- "presupuesto": estimado aproximado en pesos mexicanos o "Sin costo".
+- "riesgos": el principal riesgo y cómo evitarlo (1 frase).
+- "pasos": 3 a 5 pasos concretos, en orden, con responsable o fecha cuando aplique.
+- "metricas": 2 o 3 KPIs, cada uno con meta (ej. "Prospectos generados: 15 al mes").`;
+
+// Marca de versión del tablero: cambia con cada escritura para que las páginas abiertas
+// sepan si hay novedades con una sola lectura, sin descargar todo.
+export const marcarCambio = (store) => store.set("meta/version", `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`);
+
 export const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,

@@ -1,6 +1,7 @@
 // Tablero compartido: ideas publicadas, votos (me gusta / no me gusta) y comentarios.
 // Todo se guarda en Netlify Blobs (almacenamiento persistente del sitio).
 import { getStore } from "@netlify/blobs";
+import { marcarCambio } from "../lib/distrito.mjs";
 
 const ID = /^[a-z0-9-]{1,80}$/i;
 const TIPOS = ["ventas", "redes", "visibilidad", "mejora"];
@@ -42,7 +43,11 @@ export default async (req) => {
   const store = getStore({ name: "tablero-ideas", consistency: "strong" });
 
   if (req.method === "GET") {
-    const voter = new URL(req.url).searchParams.get("voter") || "";
+    const params = new URL(req.url).searchParams;
+    const voter = params.get("voter") || "";
+    // Consulta ligera: si nada cambió desde la versión que ya tiene la página, no se descarga todo.
+    const version = (await store.get("meta/version")) || "inicial";
+    if (params.get("v") && params.get("v") === version) return json({ sinCambios: true, version });
     if (!(await store.get("meta/sembrado"))) {
       await Promise.all(SEMILLAS.map((i) => store.setJSON(`ideas/${i.id}`, i)));
       await store.set("meta/sembrado", "1");
@@ -89,7 +94,7 @@ export default async (req) => {
       if (estados[k]) seguimiento[b.key.slice("estado/".length)] = estados[k];
     });
 
-    return json({ ideas, votes, mine, stars, myStars, comments, seguimiento });
+    return json({ ideas, votes, mine, stars, myStars, comments, seguimiento, version });
   }
 
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
@@ -119,6 +124,7 @@ export default async (req) => {
     };
     if (!idea.titulo) return json({ error: "Falta el título" }, 400);
     await store.setJSON(`ideas/${idea.id}`, idea);
+    await marcarCambio(store);
     return json({ ok: true, idea });
   }
 
@@ -130,6 +136,7 @@ export default async (req) => {
       store.delete(`votes/${ideaId}/down/${voterId}`),
     ]);
     if (value === "up" || value === "down") await store.set(`votes/${ideaId}/${value}/${voterId}`, "1");
+    await marcarCambio(store);
     return json({ ok: true });
   }
 
@@ -139,6 +146,7 @@ export default async (req) => {
     if (!ID.test(ideaId || "") || !ID.test(voterId || "") || !(n >= 0 && n <= 5)) return json({ error: "Datos inválidos" }, 400);
     await Promise.all([1, 2, 3, 4, 5].map((k) => store.delete(`stars/${ideaId}/${k}/${voterId}`)));
     if (n > 0) await store.set(`stars/${ideaId}/${n}/${voterId}`, "1");
+    await marcarCambio(store);
     return json({ ok: true });
   }
 
@@ -153,6 +161,7 @@ export default async (req) => {
       actualizado: new Date().toISOString(),
     };
     await store.setJSON(`estado/${body.ideaId}`, seg);
+    await marcarCambio(store);
     return json({ ok: true, seguimiento: seg });
   }
 
@@ -170,6 +179,7 @@ export default async (req) => {
       fecha: new Date().toISOString(),
     };
     await store.setJSON(`comments/${c.ideaId}/${c.id}`, c);
+    await marcarCambio(store);
     return json({ ok: true, comentario: c });
   }
 

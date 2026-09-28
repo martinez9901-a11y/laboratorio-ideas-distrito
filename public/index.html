@@ -250,6 +250,15 @@
   .avance b { font-family: var(--serif); font-weight: 400; font-size: 28px; display: block; line-height: 1.1; }
   .avance small { color: var(--muted); font-size: 13px; }
 
+  .ia-group { display: flex; gap: 14px; width: 100%; padding-top: 8px; margin-top: 2px; border-top: 1px dashed var(--line); }
+  .ia-group .link-btn { padding: 2px 0; }
+  .v-badge { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; background: var(--green-l); color: var(--green-d); font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 99px; }
+  .v-badge svg { width: 11px; height: 11px; }
+  .idea.trabajando { position: relative; }
+  .idea.trabajando::after { content: ""; position: absolute; inset: 0; border-radius: var(--radius); background: linear-gradient(100deg, transparent 30%, rgba(59,181,74,.12) 50%, transparent 70%); background-size: 200% 100%; animation: sk 1.2s infinite; pointer-events: none; }
+  .idea.resaltada { animation: brillo 2.4s ease; }
+  @keyframes brillo { 0%, 40% { box-shadow: 0 0 0 3px var(--green), var(--shadow); } 100% { box-shadow: var(--shadow); } }
+
   /* ---------- Comments ---------- */
   .comments { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
   .cmt { display: flex; gap: 10px; margin-bottom: 12px; }
@@ -702,6 +711,7 @@
     <symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3Z"/></symbol>
     <symbol id="i-board" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></symbol>
     <symbol id="i-track" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4M4 4h11l-2 4 2 4H4"/></symbol>
+    <symbol id="i-wand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 4 5 5L8 21l-5-5zM12 7l5 5M19 2v3M17.5 3.5h3"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
     <symbol id="i-facebook" viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v2.9h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12z"/></symbol>
@@ -728,7 +738,8 @@
     genTipo: "ventas", genRed: "", genCant: 3, genImgs: [], genImgIds: null,
     abiertos: new Set(), replyTo: {}, cfotos: {},
     pFotos: [], generadas: [],
-    opinando: {}, iaActiva: false, chat: [], chateando: false, expandidos: new Set(),
+    opinando: {}, mejorando: {}, iaActiva: false, chat: [], chateando: false, expandidos: new Set(),
+    version: null, sincronizando: false,
   };
   const CAT = { ventas: "Ventas", redes: "Redes sociales", visibilidad: "Visibilidad", mejora: "Ser mejores" };
 
@@ -894,7 +905,7 @@
         ${i.id && !String(i.id).startsWith("tmp") && state.data.ideas.some((x) => x.id === i.id) ? estadoTag(i.id) : ""}
       </div>
       <h3>${esc(i.titulo)}</h3>
-      ${i.autor ? `<div class="meta"><span class="avatar">${initials(i.autor)}</span>${esc(i.autor)} · ${fecha(i.fecha)}</div>` : ""}
+      ${i.autor ? `<div class="meta"><span class="avatar">${initials(i.autor)}</span>${esc(i.autor)} · ${fecha(i.fecha)}${i.version > 1 ? `<span class="v-badge" title="Mejorada por ${esc(i.mejoradaPor || "")} ${i.mejoradaEn ? fecha(i.mejoradaEn) : ""}">${icon("i-spark")}v${i.version} · mejorada</span>` : ""}</div>` : ""}
       <p class="desc">${esc(i.descripcion)}</p>
       ${fotosHTML(i.fotos)}
       ${i.diferenciador || pasos || met || ficha ? `<div class="more">
@@ -947,7 +958,7 @@
     const s = state.data.stars[i.id];
     const nC = (state.data.comments[i.id] || []).length;
     const abierto = state.abiertos.has(i.id);
-    return `<article class="panel idea ${state.expandidos.has(i.id) ? "open" : ""}" id="idea-${i.id}" data-id="${i.id}">
+    return `<article class="panel idea ${state.expandidos.has(i.id) ? "open" : ""} ${state.mejorando[i.id] ? "trabajando" : ""} ${state.resaltar === i.id ? "resaltada" : ""}" id="idea-${i.id}" data-id="${i.id}">
       ${cuerpoIdea(i)}
       <div class="actions">
         <div class="stars" role="group" aria-label="Calificar">
@@ -958,7 +969,10 @@
         <button type="button" class="vote up ${mine === "up" ? "on" : ""}" data-vote="${i.id}" data-v="up" title="Me gusta">${icon("i-up")}${v.up}</button>
         <button type="button" class="vote down ${mine === "down" ? "on" : ""}" data-vote="${i.id}" data-v="down" title="No me gusta">${icon("i-down")}${v.down}</button>
         <button type="button" class="link-btn" data-toggle="${i.id}" title="Comentarios">${icon("i-chat")}${nC}</button>
+        <div class="ia-group">
         <button type="button" class="link-btn ia-btn" data-opinion="${i.id}" ${state.opinando[i.id] != null ? "disabled" : ""}>${icon("i-spark")}${state.opinando[i.id] != null ? "Pensando…" : "Opinión IA"}</button>
+        <button type="button" class="link-btn ia-btn" data-mejorar="${i.id}" ${state.mejorando[i.id] ? "disabled" : ""} title="La IA reescribe la idea con los comentarios del equipo">${icon("i-wand")}${state.mejorando[i.id] ? "Mejorando…" : "Mejorar con IA"}</button>
+        </div>
       </div>
       ${abierto ? comentariosHTML(i) : ""}
     </article>`;
@@ -974,21 +988,59 @@
       recientes: (i) => new Date(i.fecha).getTime(),
     }[state.orden];
     lista.sort((a, b) => score(b) - score(a) || new Date(b.fecha) - new Date(a.fecha));
+    // Conservar lo que alguien esté escribiendo en los comentarios al volver a pintar.
+    const borradores = Object.fromEntries($$("[data-cform]").map((f) => [f.dataset.cform, f.texto.value]).filter(([, v]) => v));
     $("#board").innerHTML = lista.length
       ? lista.map(tarjetaTablero).join("")
       : `<div class="empty" style="grid-column:1/-1">No hay ideas en esta categoría todavía. ¡Genera o propone la primera!</div>`;
+    for (const [id, v] of Object.entries(borradores)) { const f = $(`[data-cform="${id}"]`); if (f) f.texto.value = v; }
+  }
+
+  function aplicarDatos(nuevo, avisar) {
+    if (avisar) {
+      // Avisos de lo que hicieron otras personas desde la última actualización.
+      const antes = new Set(state.data.ideas.map((i) => i.id));
+      const nuevas = nuevo.ideas.filter((i) => !antes.has(i.id) && i.autor !== state.nombre);
+      const mejoradas = nuevo.ideas.filter((i) => { const a = state.data.ideas.find((x) => x.id === i.id); return a && (i.version || 1) > (a.version || 1) && i.mejoradaPor !== state.nombre; });
+      const nComAntes = Object.values(state.data.comments).flat().length;
+      const comNuevos = Object.values(nuevo.comments).flat().filter((c) => c.autor !== state.nombre).length - Object.values(state.data.comments).flat().filter((c) => c.autor !== state.nombre).length;
+      if (nuevas.length === 1) toast(`💡 Nueva idea de ${nuevas[0].autor}: ${nuevas[0].titulo}`);
+      else if (nuevas.length > 1) toast(`💡 ${nuevas.length} ideas nuevas en el tablero`);
+      else if (mejoradas.length) toast(`✦ ${mejoradas[0].mejoradaPor} mejoró “${mejoradas[0].titulo}”`);
+      else if (comNuevos > 0 && nComAntes) toast(`💬 ${comNuevos === 1 ? "Hay un comentario nuevo" : `Hay ${comNuevos} comentarios nuevos`}`);
+    }
+    state.data = nuevo;
+    state.version = nuevo.version;
+    pintarMetricas();
+    pintarTablero();
+    pintarSeguimiento();
   }
 
   async function cargar() {
     try {
-      state.data = await api(`/api/ideas?voter=${encodeURIComponent(voterId)}`);
-      pintarMetricas();
-      pintarTablero();
-      pintarSeguimiento();
+      aplicarDatos(await api(`/api/ideas?voter=${encodeURIComponent(voterId)}`), false);
     } catch (e) {
       $("#board").innerHTML = `<div class="empty" style="grid-column:1/-1">No pudimos cargar el tablero. ${esc(e.message)}</div>`;
     }
   }
+
+  // ---------- Actualización automática ----------
+  // Cada 20 s (solo con la pestaña a la vista) pregunta si hubo cambios; si los hay, trae todo y vuelve a pintar.
+  // No interrumpe a quien está escribiendo, arrastrando o con una ventana abierta.
+  const ocupado = () =>
+    $$("dialog").some((d) => d.open) ||
+    Object.keys(state.opinando).length || Object.keys(state.mejorando).length || arrastrando ||
+    (document.activeElement?.matches("textarea, input, select") && document.activeElement.closest("#board, #kanban"));
+  async function sincronizar() {
+    if (document.hidden || state.sincronizando || !state.version || ocupado()) return;
+    state.sincronizando = true;
+    try {
+      const r = await api(`/api/ideas?voter=${encodeURIComponent(voterId)}&v=${encodeURIComponent(state.version)}`);
+      if (!r.sinCambios && !ocupado()) aplicarDatos(r, true);
+    } catch {} finally { state.sincronizando = false; }
+  }
+  setInterval(sincronizar, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) sincronizar(); });
 
   // ---------- Eventos del tablero ----------
   $("#filtro").onclick = (e) => {
@@ -1042,6 +1094,26 @@
     if (ir_) { e.preventDefault(); return ir(ir_.dataset.ir); }
     const sg = t.closest("[data-seg]");
     if (sg && !t.closest("[data-move]")) return abrirSeg(sg.dataset.seg);
+    const mj = t.closest("[data-mejorar]");
+    if (mj) {
+      const id = mj.dataset.mejorar;
+      if (!state.iaActiva) return toast("La IA aún no está activada (falta GEMINI_API_KEY en Netlify)");
+      if (!(await conNombre())) return;
+      state.mejorando[id] = true; pintarTablero();
+      try {
+        const r = await api("/api/asistente", { modo: "mejorar", ideaId: id, autor: state.nombre });
+        if (r.error) throw new Error(r.error);
+        const k = state.data.ideas.findIndex((x) => x.id === id);
+        if (k >= 0) state.data.ideas[k] = r.idea;
+        state.expandidos.add(id); state.resaltar = id;
+        delete state.mejorando[id];
+        pintarTablero(); pintarSeguimiento(); pintarMetricas();
+        toast(`✦ Idea mejorada · versión ${r.idea.version}`);
+        setTimeout(() => { state.resaltar = null; $(`#idea-${id}`)?.classList.remove("resaltada"); }, 2500);
+        state.version = null; await cargar(); // traer la versión más reciente del servidor
+      } catch (err) { delete state.mejorando[id]; pintarTablero(); toast(err.message); }
+      return;
+    }
     const op = t.closest("[data-opinion]");
     if (op) {
       const id = op.dataset.opinion;

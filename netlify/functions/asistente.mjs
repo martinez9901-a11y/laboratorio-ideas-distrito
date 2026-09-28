@@ -3,7 +3,7 @@
 //  - modo "opinion": analiza una idea del tablero y deja su opinión como comentario guardado
 // Requiere GEMINI_API_KEY (Google AI Studio, nivel gratuito) en las variables de entorno de Netlify.
 import { getStore } from "@netlify/blobs";
-import { EMPRESA, VOZ, json, streamTexto, geminiStream, iaActiva, diagnostico } from "../lib/distrito.mjs";
+import { EMPRESA, VOZ, json, streamTexto, jsonConEspera, geminiStream, geminiJSON, iaActiva, diagnostico, marcarCambio, ESQUEMA_IDEA, CAMPOS_IDEA } from "../lib/distrito.mjs";
 
 const ID = /^[a-z0-9-]{1,80}$/i;
 const CAT = { ventas: "Ventas", redes: "Redes sociales", visibilidad: "Visibilidad", mejora: "Ser mejores" };
@@ -110,7 +110,73 @@ ${comentarios.length ? `Comentarios del equipo:\n${comentarios.slice(-10).map((c
           fecha: new Date().toISOString(),
         };
         await store.setJSON(`comments/${idea.id}/${c.id}`, c);
+        await marcarCambio(store);
       });
+    }
+
+    if (body.modo === "mejorar") {
+      if (!ID.test(body.ideaId || "")) return json({ error: "Idea no válida" }, 400);
+      const idea = await store.get(`ideas/${body.ideaId}`, { type: "json" });
+      if (!idea) return json({ error: "La idea ya no existe" }, 404);
+      const { blobs } = await store.list({ prefix: `comments/${idea.id}/` });
+      const comentarios = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean);
+      const f = idea.ficha || {};
+      const actual = [
+        `Categoría: ${CAT[idea.tipo] || idea.tipo}${idea.red ? ` (${idea.red})` : ""}`,
+        `Título: ${idea.titulo}`,
+        `Descripción: ${idea.descripcion || "(sin descripción)"}`,
+        idea.diferenciador && `Nos diferencia: ${idea.diferenciador}`,
+        ...Object.entries(f).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`),
+        idea.pasos?.length && `Pasos: ${idea.pasos.join("; ")}`,
+        idea.metricas?.length && `Métricas: ${idea.metricas.join("; ")}`,
+      ].filter(Boolean).join("\n");
+      const quien = String(body.autor ?? "").slice(0, 60) || "Anónimo";
+
+      return jsonConEspera(
+        (async () => {
+          const nueva = await geminiJSON({
+            sistema: `${VOZ}\n\n${EMPRESA}`,
+            esquema: ESQUEMA_IDEA,
+            mensajes: [
+              {
+                role: "user",
+                content: `Mejora esta idea del tablero del equipo. Conserva su esencia y categoría, pero hazla más concreta,
+original y fácil de ejecutar. Toma en cuenta los comentarios del equipo y las opiniones de la IA.
+${body.instruccion ? `Indicación del equipo para esta mejora: ${String(body.instruccion).slice(0, 500)}\n` : ""}
+IDEA ACTUAL:
+${actual}
+
+${comentarios.length ? `COMENTARIOS:\n${comentarios.slice(-15).map((c) => `- ${c.autor}: ${c.texto}`).join("\n")}` : "Sin comentarios todavía."}
+
+Devuelve la idea mejorada completa. Campos:
+${CAMPOS_IDEA}`,
+              },
+            ],
+          });
+          const version = (idea.version || 1) + 1;
+          await store.setJSON(`versiones/${idea.id}/${version - 1}`, idea); // respaldo de la versión anterior
+          const lista = (v, n) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => String(x).slice(0, 300)).filter(Boolean);
+          const ficha = {};
+          for (const k of ["objetivo", "publico", "mensaje", "tiempo", "presupuesto", "riesgos"]) if (nueva[k]) ficha[k] = String(nueva[k]).slice(0, 400);
+          if (lista(nueva.canales, 8).length) ficha.canales = lista(nueva.canales, 8);
+          const mejorada = {
+            ...idea,
+            titulo: String(nueva.titulo || idea.titulo).slice(0, 160),
+            descripcion: String(nueva.descripcion || idea.descripcion).slice(0, 1500),
+            diferenciador: String(nueva.diferenciador || "").slice(0, 400),
+            pasos: lista(nueva.pasos, 8),
+            metricas: lista(nueva.metricas, 6),
+            ficha,
+            red: idea.tipo === "redes" ? idea.red || String(nueva.red || "").slice(0, 30) : idea.red,
+            version,
+            mejoradaPor: quien,
+            mejoradaEn: new Date().toISOString(),
+          };
+          await store.setJSON(`ideas/${idea.id}`, mejorada);
+          await marcarCambio(store);
+          return { ok: true, idea: mejorada };
+        })(),
+      );
     }
 
     return json({ error: "Modo desconocido" }, 400);
